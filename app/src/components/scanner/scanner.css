@@ -10,6 +10,10 @@
   overflow: hidden;
 }
 #gate.hidden { opacity: 0; visibility: hidden; }
+/* No scrolling the page behind the gate: not by keyboard (space, arrows, page keys), not by touch drag, not by the
+   scrollbar, and no rubber-banding. Set by the Scanner while it is visible; released the moment you board. */
+html.gate-lock, html.gate-lock body { overflow: hidden; overscroll-behavior: none; }
+#gate { touch-action: none; overscroll-behavior: none; }
 /* Dark mode: the gate's pure-white "light from above" wash would read as a harsh spotlight on a near-black page, so soften it. */
 .dark #gate {
   background:

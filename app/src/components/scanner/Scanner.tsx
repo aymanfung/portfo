@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { cn } from "@/lib/utils"
 import qrRaw from "./qr.txt?raw"
 import "./scanner.css"
@@ -83,6 +84,15 @@ interface ScannerProps {
 
 export function Scanner({ visible, onBoarded }: ScannerProps) {
   const { fitRef, phoneRef, captionRef, idle, near, success, status, onPhonePointerDown } = useScanner({ visible, onBoarded })
+
+  // While the gate is showing the page behind it must not scroll (keyboard, touch drag, scrollbar or overscroll):
+  // the wheel is already used to slide the phone up. See `html.gate-lock` in scanner.css.
+  useEffect(() => {
+    if (!visible) return
+    const root = document.documentElement
+    root.classList.add("gate-lock")
+    return () => root.classList.remove("gate-lock")
+  }, [visible])
 
   return (
     <div
