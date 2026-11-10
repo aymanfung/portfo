@@ -1,0 +1,189 @@
+/* ══ New York taxi rooflight ═══════════════════════════════════
+   Pure CSS 3D, everything scoped under .taxi (other stylesheets in
+   this app use generic names like .scene, so all classes here are
+   either under .taxi or prefixed taxi-).
+   data-mode="light" → TAXI panel + amber lenses lit
+   data-mode="dark"  → TAXI goes dark, the OFF DUTY panels light up
+   ═══════════════════════════════════════════════════════════════ */
+
+.taxi-fit { position: relative; width: 100%; height: calc(300px * var(--taxi-s, 1)); }
+
+.taxi {
+  position: absolute; left: 50%; top: 0;
+  width: 760px; height: 300px; margin-left: -380px;
+  perspective: 1500px;
+  transform: scale(var(--taxi-s, 1));
+  transform-origin: 50% 0;
+}
+
+.taxi .taxi-floor-shadow {
+  position: absolute; left: 50%; top: 60%;
+  width: 640px; height: 90px; margin-left: -320px;
+  background: radial-gradient(closest-side, rgba(40, 30, 20, .3), rgba(40, 30, 20, 0));
+  filter: blur(6px);
+  pointer-events: none;
+}
+.dark .taxi .taxi-floor-shadow { background: radial-gradient(closest-side, rgba(0, 0, 0, .6), rgba(0, 0, 0, 0)); }
+
+.taxi .taxi-scene {
+  position: absolute; left: 50%; top: 62%;
+  width: 0; height: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx, -6deg)) rotateY(var(--ry, 0deg));
+  transition: transform .25s ease-out;
+}
+.taxi .taxi-scene, .taxi .taxi-scene * { transform-style: preserve-3d; }
+
+/* ---------- generic slab (origin = bottom centre) ---------- */
+.taxi .slab { position: absolute; left: 0; top: 0; --w: 100px; --d: 100px; --h: 10px; --c: #ccc; }
+.taxi .slab > i {
+  position: absolute; display: block; font-style: normal;
+  background-color: var(--c);
+  background-image: linear-gradient(rgba(0, 0, 0, var(--shade, 0)), rgba(0, 0, 0, var(--shade, 0)));
+  transition: background-color .7s ease;
+}
+.taxi .slab .t  { --shade: 0;   width: var(--w); height: var(--d); left: calc(var(--w) / -2); top: calc(var(--d) / -2);
+                  transform: translateY(calc(var(--h) * -1)) rotateX(90deg); }
+.taxi .slab .fr { --shade: .10; width: var(--w); height: var(--h); left: calc(var(--w) / -2); top: calc(var(--h) * -1);
+                  transform: translateZ(calc(var(--d) / 2)); }
+.taxi .slab .bk { --shade: .25; width: var(--w); height: var(--h); left: calc(var(--w) / -2); top: calc(var(--h) * -1);
+                  transform: rotateY(180deg) translateZ(calc(var(--d) / 2)); }
+.taxi .slab .lf { --shade: .22; width: var(--d); height: var(--h); left: calc(var(--d) / -2); top: calc(var(--h) * -1);
+                  transform: rotateY(-90deg) translateZ(calc(var(--w) / 2)); }
+.taxi .slab .rt { --shade: .18; width: var(--d); height: var(--h); left: calc(var(--d) / -2); top: calc(var(--h) * -1);
+                  transform: rotateY(90deg) translateZ(calc(var(--w) / 2)); }
+
+/* table */
+.taxi .table { --w: 540px; --d: 230px; --h: 16px; --c: #c9ced4; transform: translate3d(0, 16px, 0); }
+.dark .taxi .table { --c: #33363d; }
+
+/* the rooflight: base rim, body, roof plate */
+.taxi .rim  { --w: 480px; --d: 130px; --h: 12px; --c: #19191b; }
+.taxi .body { --w: 380px; --d: 100px; --h: 82px; --c: #121213; transform: translate3d(0, -12px, 0); }
+.taxi .roof { --w: 412px; --d: 118px; --h: 5px;  --c: #0b0b0c; transform: translate3d(0, -94px, 0); }
+
+/* amber end lenses: lit in light mode, dim in dark mode */
+.taxi .lens { --w: 40px; --d: 98px; --h: 60px; --c: #f6a31c; }
+.taxi .lens-l { transform: translate3d(-212px, -12px, 0); }
+.taxi .lens-r { transform: translate3d(212px, -12px, 0); }
+.taxi[data-mode="dark"] .lens { --c: #6a4312; }
+.taxi .lens > i::after {            /* ribbed plastic */
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 5px, rgba(0, 0, 0, .07) 5px 7px);
+}
+.taxi .lens > .t::after, .taxi .lens > .bk::after { display: none; }
+.taxi .lens > .fr, .taxi .lens > .lf, .taxi .lens > .rt {
+  box-shadow: 0 0 22px 2px rgba(255, 150, 30, .55);
+  transition: background-color .7s ease, box-shadow .7s ease;
+}
+.taxi[data-mode="dark"] .lens > .fr,
+.taxi[data-mode="dark"] .lens > .lf,
+.taxi[data-mode="dark"] .lens > .rt { box-shadow: 0 0 0 0 rgba(255, 150, 30, 0); }
+
+/* ---------- lettered panels ---------- */
+.taxi .taxi-face { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
+.taxi .taxi-face.is-back { transform: rotateY(180deg); }
+
+.taxi .taxi-panel {
+  position: absolute; left: 0; top: 0;
+  display: grid; place-content: center; text-align: center;
+  background: #0c0c0d;
+  box-shadow: inset 0 0 0 2px #1f1f21;
+  font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 900; line-height: .95;
+  color: #5a5c61;
+  text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  transition: color .6s ease, text-shadow .6s ease;
+}
+.taxi .taxi-panel::before {          /* backlight bloom behind the lettering */
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(80% 70% at 50% 50%, rgba(255, 255, 255, .26), rgba(255, 255, 255, .06) 70%, transparent);
+  opacity: 0; transition: opacity .6s ease;
+}
+.taxi .taxi-panel > span { position: relative; }
+.taxi .p-center { width: 168px; height: 66px; margin: -33px 0 0 -84px;  transform: translate3d(0, -53px, 52px);   font-size: 60px; letter-spacing: 1px; }
+.taxi .p-side-l { width: 94px;  height: 60px; margin: -30px 0 0 -47px;  transform: translate3d(-138px, -53px, 51px); font-size: 25px; }
+.taxi .p-side-r { width: 94px;  height: 60px; margin: -30px 0 0 -47px;  transform: translate3d(138px, -53px, 51px);  font-size: 25px; }
+
+.taxi .is-lit { color: #fff; text-shadow: 0 0 6px rgba(255, 255, 255, .95), 0 0 18px rgba(255, 244, 210, .65); }
+.taxi .is-lit::before { opacity: 1; }
+/* TAXI lit in light mode; OFF DUTY lit in dark mode */
+.taxi[data-mode="light"] .p-center, .taxi[data-mode="dark"] .p-side-l, .taxi[data-mode="dark"] .p-side-r {
+  color: #fff; text-shadow: 0 0 6px rgba(255, 255, 255, .95), 0 0 18px rgba(255, 244, 210, .65);
+}
+.taxi[data-mode="light"] .p-center::before, .taxi[data-mode="dark"] .p-side-l::before, .taxi[data-mode="dark"] .p-side-r::before { opacity: 1; }
+
+/* ---------- the whole sign is the button ---------- */
+.taxi .taxi-sign {
+  position: absolute; left: 0; top: 0; width: 0; height: 0;
+  transform: translateY(0);
+  transition: transform .25s cubic-bezier(.3, 1.5, .5, 1);
+  cursor: pointer; outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.taxi .taxi-sign:hover { transform: translateY(-4px); }
+.taxi .taxi-sign:active { transform: translateY(1px); }
+.taxi .taxi-sign:focus-visible .roof > i { outline: 3px solid var(--brand, #2857ee); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .taxi .taxi-scene { transition: none; }
+  .taxi .taxi-sign { transition: none; }
+  .taxi .taxi-sign:hover { transform: none; }
+}
+
+/* ══ London black-cab light ═════════════════════════════════════
+   A glossy black oval (a stack of ellipse slices) with a glowing orange diamond-textured lens
+   and black TAXI lettering. Lit in light mode, switched off in dark mode.
+   ═══════════════════════════════════════════════════════════════ */
+.taxi .plinth { --w: 250px; --d: 84px; --h: 10px; --c: #111113; }
+
+.taxi .ldn { position: absolute; left: 0; top: 0; transform: translate3d(0, -10px, 0); }
+.taxi .ldn-layer {
+  position: absolute; left: -160px; top: -108px; width: 320px; height: 108px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 18%, #3a3a40 0%, #141416 45%, #050506 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05);
+}
+
+/* the lens, in front of the body */
+.taxi .ldn-lens, .taxi .ldn-glow {
+  position: absolute; left: -144px; top: -93px; width: 288px; height: 78px; border-radius: 50%;
+}
+.taxi .ldn-glow {
+  transform: translateZ(34px);
+  box-shadow: 0 0 46px 12px rgba(255, 140, 20, .65), 0 0 120px 30px rgba(255, 120, 10, .3);
+  transition: opacity .7s ease .15s;
+}
+.taxi .ldn-lens {
+  transform: translateZ(36.5px);
+  display: grid; place-items: center; overflow: hidden;
+  background:
+    repeating-linear-gradient(45deg, rgba(0, 0, 0, .13) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, .13) 0 1px, transparent 1px 6px),
+    radial-gradient(ellipse at 50% 45%, #ffc24a 0%, #ff9a1a 45%, #e8640a 100%);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .55), inset 0 0 18px rgba(120, 40, 0, .45);
+}
+.taxi .ldn-lens > span {
+  position: relative;
+  font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 800; font-size: 50px;
+  letter-spacing: 7px; padding-left: 7px; line-height: 1; color: #15110c;
+  opacity: .92;
+}
+.taxi .ldn-lens::after {              /* switched off: a dark amber plastic cover fades in */
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: radial-gradient(ellipse at 50% 45%, rgba(74, 40, 14, .88), rgba(34, 18, 7, .95));
+  opacity: 0; transition: opacity .7s ease .15s;
+}
+.taxi[data-mode="dark"] .ldn-lens::after { opacity: 1; }
+.taxi[data-mode="dark"] .ldn-glow { opacity: 0; }
+
+/* orange light spilling onto the surface */
+.taxi .ldn-spill {
+  position: absolute; left: -190px; top: -75px; width: 380px; height: 150px;
+  background: radial-gradient(closest-side, rgba(255, 150, 30, .42), rgba(255, 150, 30, 0));
+  transform: rotateX(90deg) translateZ(1px);
+  transition: opacity .7s ease .15s;
+  pointer-events: none;
+}
+.taxi[data-mode="dark"] .ldn-spill { opacity: 0; }
+
+.taxi .taxi-sign:focus-visible .ldn-lens { box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--brand, #2857ee); }

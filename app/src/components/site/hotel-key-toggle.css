@@ -1,0 +1,141 @@
+/* ══ Hotel key-card power switch ═══════════════════════════════
+   The wall switch every hotel room has: slot your key card in and the room gets power.
+   Card slotted in → lights on (light mode). Card pulled out → power cuts (dark mode).
+   Pure CSS 3D; all classes scoped under .hk.
+   data-mode="light" → card in the slot, LED green
+   data-mode="dark"  → card out, LED red
+   (Wall and plate colours follow the real theme via `.dark` on <html>, so they change when the room does,
+   a beat after the card moves.)
+   ═══════════════════════════════════════════════════════════════ */
+
+.hk-fit { position: relative; width: 100%; height: calc(330px * var(--hk-s, 1)); }
+
+.hk {
+  position: absolute; left: 50%; top: 0;
+  width: 760px; height: 330px; margin-left: -380px;
+  perspective: 1500px;
+  transform: scale(var(--hk-s, 1));
+  transform-origin: 50% 0;
+}
+
+.hk .hk-scene {
+  position: absolute; left: 50%; top: 53%;
+  width: 0; height: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform .25s ease-out;
+}
+.hk .hk-scene, .hk .hk-scene * { transform-style: preserve-3d; }
+
+/* ---------- the wall ---------- */
+.hk .hk-wall {
+  position: absolute; left: -210px; top: -145px; width: 420px; height: 290px;
+  border-radius: 18px;
+  transform: translateZ(-6px);
+  background:
+    repeating-linear-gradient(90deg, rgba(60, 40, 20, .035) 0 2px, transparent 2px 16px),
+    linear-gradient(180deg, #ece7df, #e1dbd0);
+  box-shadow: 0 24px 40px -18px rgba(30, 20, 10, .35), inset 0 0 0 1px rgba(255, 255, 255, .6);
+}
+.dark .hk .hk-wall {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .025) 0 2px, transparent 2px 16px),
+    linear-gradient(180deg, #232327, #19191c);
+  box-shadow: 0 24px 40px -18px rgba(0, 0, 0, .8), inset 0 0 0 1px rgba(255, 255, 255, .05);
+}
+
+/* ---------- the switch (plate + card) is the button ---------- */
+.hk .hk-switch {
+  position: absolute; left: 0; top: 0; width: 0; height: 0;
+  cursor: pointer; outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.hk .hk-switch:focus-visible .hk-plate-front { box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--brand, #2857ee); }
+
+/* plate: a stack of rounded slices for thickness, then the brushed-metal face */
+.hk .hk-edge, .hk .hk-plate-front {
+  position: absolute; left: -75px; top: -100px; width: 150px; height: 200px; border-radius: 14px;
+}
+.hk .hk-edge { background: #8f939b; }
+.dark .hk .hk-edge { background: #141416; }
+.hk .hk-plate-front {
+  transform: translateZ(8px);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .16) 0 1px, rgba(0, 0, 0, .025) 1px 3px),
+    linear-gradient(145deg, #f6f7f9 0%, #d3d6dc 55%, #e8eaee 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8), inset 0 -2px 4px rgba(0, 0, 0, .12), 0 6px 14px rgba(30, 20, 10, .25);
+}
+.dark .hk .hk-plate-front {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .05) 0 1px, rgba(0, 0, 0, .06) 1px 3px),
+    linear-gradient(145deg, #3d3f45 0%, #26272b 55%, #323438 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1), inset 0 -2px 4px rgba(0, 0, 0, .4), 0 6px 14px rgba(0, 0, 0, .6);
+}
+
+/* the card slot */
+.hk .hk-slot {
+  position: absolute; left: 35px; top: 84px; width: 80px; height: 9px; border-radius: 5px;
+  background: #08080a;
+  box-shadow: inset 0 2px 3px #000, 0 1px 0 rgba(255, 255, 255, .75);
+}
+.dark .hk .hk-slot { box-shadow: inset 0 2px 3px #000, 0 1px 0 rgba(255, 255, 255, .12); }
+
+/* power LED under the slot */
+.hk .hk-led {
+  position: absolute; left: 70px; top: 114px; width: 10px; height: 10px; border-radius: 50%;
+  background: #b3261e;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, .25), 0 0 6px 1px rgba(179, 38, 30, .55);
+  transition: background .35s ease .15s, box-shadow .35s ease .15s;
+}
+.hk[data-mode="light"] .hk-led {
+  background: #2fe26c;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, .25), 0 0 10px 3px rgba(47, 226, 108, .75);
+}
+.hk .hk-label {
+  position: absolute; left: 0; right: 0; top: 148px; text-align: center;
+  font: 500 8px/1 "DM Mono", ui-monospace, monospace; letter-spacing: .26em; text-transform: uppercase;
+  color: #7b7e86; padding-left: .26em;
+}
+.dark .hk .hk-label { color: #7d8088; }
+
+/* ---------- the key card ---------- */
+/* A clip box ends at the slot, so the card seems to disappear into it. */
+.hk .hk-clip {
+  position: absolute; left: -30px; top: -150px; width: 210px; height: 238px;  /* bottom edge = slot centre (y 88) */
+  overflow: hidden; pointer-events: none;
+}
+.hk .hk-clip::after {                 /* soft shadow where the card enters the slot */
+  content: ""; position: absolute; left: 60px; width: 90px; bottom: 0; height: 9px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, .35));
+}
+.hk .hk-card {
+  --y: 40;                            /* top of the card, in plate px: 40 = slotted in (48px showing) */
+  --r: 0deg;
+  position: absolute; left: 72px; top: 0; width: 66px; height: 105px;
+  transform: translateY(calc((var(--y) + 150) * 1px)) rotate(var(--r));
+  transition: transform .6s cubic-bezier(.34, 1.3, .5, 1);
+  pointer-events: auto;
+}
+.hk[data-mode="dark"] .hk-card { --y: -62; --r: -5deg; }
+.hk[data-mode="light"] .hk-switch:hover .hk-card { --y: 34; }
+.hk[data-mode="dark"] .hk-switch:hover .hk-card { --y: -50; --r: -2deg; }
+
+.hk .hk-card-body {
+  position: absolute; inset: 0; border-radius: 6px;
+  background: linear-gradient(160deg, #2b2b30, #121215 60%, #1a1a1e);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16), 0 8px 14px rgba(0, 0, 0, .4);
+  display: flex; flex-direction: column; align-items: center; padding-top: 9px; gap: 5px;
+  color: #d9c79e;
+}
+.hk[data-mode="dark"] .hk-card-body { animation: hk-bob 2.4s ease-in-out infinite alternate; }
+@keyframes hk-bob { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+.hk .hk-mono { font: italic 600 17px/1 Georgia, "Times New Roman", serif; letter-spacing: .02em; }
+.hk .hk-rule { width: 26px; height: 1px; background: linear-gradient(90deg, transparent, #d9c79e, transparent); }
+.hk .hk-chip { width: 20px; height: 15px; border-radius: 3px; margin-top: 8px; background: linear-gradient(135deg, #e7d8b0, #b9a572); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
+.hk .hk-room { margin-top: auto; margin-bottom: 8px; font: 500 6px/1.3 "DM Mono", ui-monospace, monospace; letter-spacing: .18em; text-align: center; color: #b8a77f; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hk .hk-scene { transition: none; }
+  .hk .hk-card { transition: transform .15s linear; }
+  .hk[data-mode="dark"] .hk-card-body { animation: none; }
+}

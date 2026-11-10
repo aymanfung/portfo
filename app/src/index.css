@@ -1,0 +1,257 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource/dm-mono/400.css";
+@import "@fontsource/dm-mono/500.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Geist Variable', sans-serif;
+    --font-mono: 'DM Mono', ui-monospace, monospace;
+    --color-brand: var(--brand);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    --brand: #2857ee;
+    --background: #faf5f5;
+    --foreground: #17160f;
+    --card: #ffffff;
+    --card-foreground: #17160f;
+    --popover: #ffffff;
+    --popover-foreground: #17160f;
+    --primary: #17160f;
+    --primary-foreground: #faf5f5;
+    --secondary: #f0e9e5;
+    --secondary-foreground: #17160f;
+    --muted: #f0e9e5;
+    --muted-foreground: #6b685f;
+    --accent: #f0e9e5;
+    --accent-foreground: #17160f;
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: #e4ddd8;
+    --input: #e4ddd8;
+    --ring: #2857ee;
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
+}
+
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+::selection { background: var(--brand); color: #fff; }
+
+/* dark mode (set by the taxi sign): the glass dock's ink and shadow are bare RGB triples, so flip them here */
+.dark .gdock { --ink-rgb: 250, 245, 245; --shadow-rgb: 0, 0, 0; --g-spec: 0.14; --g-lift: 0.5; --g-edge-hi: 0.35; --g-edge-lo: 0.06; --g-edge-far: 0.18; }
+
+/* light ↔ dark: one smooth cross-fade of the whole page (View Transitions API, started by the taxi sign) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: .7s;
+  animation-timing-function: cubic-bezier(.4, 0, .2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+/* circular wipe: when the eye toggle starts the transition, the new theme grows out of the eye as a circle
+   (the keyframes are set in use-theme-switch.ts); no cross-fade underneath it */
+html[data-wipe]::view-transition-old(root),
+html[data-wipe]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html[data-wipe]::view-transition-old(root) { z-index: 1; }
+html[data-wipe]::view-transition-new(root) { z-index: 2; }
+
+/* ══ Eye tracker ═══════════════════════════════════════════
+   See components/site/EyeTracker.tsx. The frame holds the largest ball the
+   Size knob allows, so the wall never rescales it. */
+.eyt {
+  /* Bencho's design tokens, mapped onto this project. Where the project has its own for the same job they point
+     at it, so the eye follows the site's palette; defined here on the component's own root so nothing leaks out. */
+  --bg: var(--background);                       /* the page ground */
+  --ink: var(--foreground);                      /* text and the mark */
+  /* --card: the project already defines it (shadcn), so it is used as it is */
+  --font-ui: "Geist Variable", var(--font-sans, ui-sans-serif), sans-serif;
+  /* the ball is a mark here, not a toy on a coloured block: the site's ink for the body and the ground for the
+     eyes, so it reads dark with light eyes on the light page */
+  --fill-slab: var(--ink);                       /* the body */
+  --fill-on: var(--bg);                          /* the eyes */
+
+  width: 200px;
+  height: 200px;
+  display: grid;
+  place-items: center;}
+
+/* in dark mode the body is a lifted dark grey with the eyes kept white, so it does not vanish into the page */
+.dark .eyt { --fill-slab: #2b2c30; --fill-on: #fbfbfa; }
+
+.eyt-ball {
+  width: var(--eyt-size, 100px);
+  height: var(--eyt-size, 100px);
+  overflow: visible;}
+
+/* the ball is the Fill's own slab and the eyes its ink: white
+   with dark eyes on a light fill, near-black with light eyes on
+   a dark one */
+.eyt-body { fill: var(--fill-slab, #ffffff); transition: fill 600ms ease; }
+
+.eyt-eye { fill: var(--fill-on, #0b0b0d); transition: fill 600ms ease; }
+
+/* a press on the toy opens a chat bubble off its lower right: the
+   pet's bubble, its square corner pointing back at the face */
+.eyt { position: relative; }
+
+/* a press gives a little under the finger and springs back out */
+.eyt-ball[data-poke] {
+  cursor: pointer;
+  transform-origin: center;
+  transition: scale 420ms cubic-bezier(0.24, 1.34, 0.38, 1);
+  -webkit-tap-highlight-color: transparent;}
+
+.eyt-ball[data-poke]:active { scale: 0.96; transition-duration: 160ms; transition-timing-function: ease; }
+
+.eyt-say {
+  position: absolute;
+  left: calc(50% + var(--eyt-size, 100px) * 0.36);
+  top: calc(50% + var(--eyt-size, 100px) * 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 34px;
+  padding: 0 16px;
+  border-radius: 6px 14px 14px 14px;
+  background: var(--tint, #3b5bff);
+  box-shadow: inset 0 -1.5px 0 rgba(0, 0, 0, 0.1);
+  color: #ffffff;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+  transform-origin: top left;
+  opacity: 0;
+  scale: 0.85;
+  pointer-events: none;
+  transition: opacity 160ms ease, scale 220ms cubic-bezier(0.24, 1.34, 0.38, 1), background-color 220ms ease;
+  letter-spacing: 0em;}
+
+.eyt-say[data-on] { opacity: 1; scale: 1; }
+
+/* white on the bubble's own tint (Bencho draws it in the Fill's slab, which is white there) */
+.eyt-caret {
+  width: 1.5px;
+  height: 13px;
+  border-radius: 1px;
+  background: #ffffff;
+  animation: pet-caret 1s steps(1) infinite;}
+
+/* as a mark in the page the frame is just the ball */
+.eye-toggle .eyt { width: auto; height: auto; }
+
+@keyframes pet-caret {
+  50% { opacity: 0; }}
+
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* clouds drifting across the cabin window */
+@keyframes cloud-drift { from { transform: translateX(0); } to { transform: translateX(260%); } }
+.cloud { animation: cloud-drift 40s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .cloud { animation: none; } }

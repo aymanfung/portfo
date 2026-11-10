@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taxi Toggle — Mechanism Test</title>
+  <style>
+    /* ------------------------------------------------------------
+       MECHANISM TEST ONLY.
+       Site colours stay as-is. The flip sign does NOT change any
+       theme yet — it only reports its state (data-state + event).
+       ------------------------------------------------------------ */
+    :root {
+      --bg: #f4f2ee;
+      --ink: #1a1a1a;
+      --ink-soft: #55534e;
+      --line: #d8d4cc;
+      --accent: #c2410c;
+      --taxi-red: #d4262e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow-x: hidden;
+    }
+    .wrap { width: 100%; padding: 2rem 16px 3rem; text-align: center; }
+    .eyebrow {
+      font-size: .75rem; letter-spacing: .2em; text-transform: uppercase;
+      color: var(--accent); margin: 0 0 .5rem;
+    }
+    .hint { color: var(--ink-soft); font-size: .9rem; margin: 0 0 .5rem; }
+
+    /* ---------- Stage ---------- */
+    .stage-fit { position: relative; width: 100%; height: calc(440px * var(--s, 1)); }
+    .stage {
+      position: absolute; left: 50%; top: 0;
+      width: 760px; height: 440px; margin-left: -380px;
+      perspective: 1500px;
+      transform: scale(var(--s, 1));
+      transform-origin: 50% 0;
+    }
+    .floor-shadow {
+      position: absolute; left: 50%; top: 66%;
+      width: 640px; height: 120px; margin-left: -320px;
+      background: radial-gradient(closest-side, rgba(40,30,20,.28), rgba(40,30,20,0));
+      filter: blur(6px);
+      pointer-events: none;
+    }
+    .scene {
+      position: absolute; left: 50%; top: 58%;
+      width: 0; height: 0;
+      transform-style: preserve-3d;
+      transform: rotateX(var(--rx, -16deg)) rotateY(var(--ry, 18deg));
+      transition: transform .25s ease-out;
+    }
+    .scene, .scene * { transform-style: preserve-3d; }
+
+    /* ---------- Generic slab (origin = bottom centre) ---------- */
+    .slab { position: absolute; left: 0; top: 0; --w: 100px; --d: 100px; --h: 10px; --c: #ccc; }
+    .slab > i {
+      position: absolute; display: block;
+      background-color: var(--c);
+      background-image: linear-gradient(rgba(0,0,0,var(--shade, 0)), rgba(0,0,0,var(--shade, 0)));
+    }
+    .slab .t  { --shade: 0;    width: var(--w); height: var(--d); left: calc(var(--w) / -2); top: calc(var(--d) / -2);
+                transform: translateY(calc(var(--h) * -1)) rotateX(90deg); }
+    .slab .fr { --shade: .10;  width: var(--w); height: var(--h); left: calc(var(--w) / -2); top: calc(var(--h) * -1);
+                transform: translateZ(calc(var(--d) / 2)); }
+    .slab .bk { --shade: .25;  width: var(--w); height: var(--h); left: calc(var(--w) / -2); top: calc(var(--h) * -1);
+                transform: rotateY(180deg) translateZ(calc(var(--d) / 2)); }
+    .slab .lf { --shade: .22;  width: var(--d); height: var(--h); left: calc(var(--d) / -2); top: calc(var(--h) * -1);
+                transform: rotateY(-90deg) translateZ(calc(var(--w) / 2)); }
+    .slab .rt { --shade: .18;  width: var(--d); height: var(--h); left: calc(var(--d) / -2); top: calc(var(--h) * -1);
+                transform: rotateY(90deg) translateZ(calc(var(--w) / 2)); }
+
+    .base    { --w: 640px; --d: 230px; --h: 16px; --c: #c9ced4; transform: translate3d(0, 16px, 0); }
+    .flange  { --w: 322px; --d: 142px; --h: 8px;  --c: #dfe3e8; transform: translate3d(-120px, 0, 0); }
+    .tray    { --w: 190px; --d: 170px; --h: 20px; --c: #1d1d20; transform: translate3d(200px, 0, 0); }
+    .post-l  { --w: 12px;  --d: 14px;  --h: 50px; --c: #0e0e10; transform: translate3d(112px, -20px, -78px); }
+    .post-r  { --w: 12px;  --d: 14px;  --h: 50px; --c: #0e0e10; transform: translate3d(288px, -20px, -78px); }
+    .hinge   { --w: 188px; --d: 10px;  --h: 8px;  --c: #0e0e10; transform: translate3d(200px, -20px, -80px); }
+    .pad     { --w: 150px; --d: 110px; --h: 2px;  --c: #f2f2ee; transform: translate3d(200px, -20px, 22px); }
+
+    /* ---------- Taxi light box ---------- */
+    .lightbox {
+      position: absolute; left: 0; top: 0;
+      transform: translate3d(-120px, -8px, 0);
+      --W: 300px; --H: 104px; --D: 120px; --lean: 10deg; --inset: 18px; --Hc: 102.4px;
+    }
+    .lightbox .face {
+      position: absolute;
+      background:
+        radial-gradient(120% 90% at 50% 40%, #fffdf8 0%, #fff4e4 55%, #ffe3c2 100%);
+      box-shadow: inset 0 0 26px rgba(255, 160, 80, .45);
+    }
+    /* Lamp off: a dim overlay fades in over every face when the sign is folded down */
+    .lightbox .face::after {
+      content: ""; position: absolute; inset: 0; border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(58, 62, 74, .86), rgba(36, 38, 48, .92));
+      opacity: 0;
+      transition: opacity .7s ease .15s;   /* slight delay: lamp cuts out after the flap lands */
+    }
+    .taxi[data-state="down"] .lightbox .face::after { opacity: 1; transition-delay: .35s; }
+    .taxi[data-state="up"] .lightbox .face { animation: lamp-on .7s ease .15s; }
+    @keyframes lamp-on { 0%,30% { filter: brightness(.85); } 38% { filter: brightness(1.15); } 50% { filter: brightness(.9); } 100% { filter: none; } }
+
+    .lightbox .front, .lightbox .back {
+      width: var(--W); height: var(--H);
+      left: calc(var(--W) / -2); top: calc(var(--H) * -1);
+      transform-origin: 50% 100%;
+      border-radius: 10px 10px 2px 2px;
+      display: grid; place-items: center;
+    }
+    .lightbox .front { transform: translateZ(60px) rotateX(var(--lean)); }
+    .lightbox .back  { transform: rotateY(180deg) translateZ(60px) rotateX(var(--lean)); }
+    .lightbox .cap {
+      width: var(--D); height: var(--Hc);
+      left: calc(var(--D) / -2); top: calc(var(--Hc) * -1);
+      clip-path: polygon(var(--inset) 0, calc(100% - var(--inset)) 0, 100% 100%, 0 100%);
+      display: grid; place-items: center;
+      background: radial-gradient(100% 90% at 50% 40%, #fff9ef 0%, #ffe9cf 70%, #ffd9ad 100%);
+      box-shadow: none;
+    }
+    .lightbox .cap-l { transform: rotateY(-90deg) translateZ(150px); }
+    .lightbox .cap-r { transform: rotateY(90deg) translateZ(150px); }
+    .lightbox .lid {
+      width: var(--W); height: calc(var(--D) - 2 * var(--inset));
+      left: calc(var(--W) / -2); top: calc((var(--D) - 2 * var(--inset)) / -2);
+      transform: translateY(calc(var(--Hc) * -1)) rotateX(90deg);
+      background: linear-gradient(180deg, #fffaf2, #ffeccf);
+      border-radius: 14px;
+    }
+    .lightbox .taxi-text {
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-weight: 800; font-size: 66px; letter-spacing: 4px; line-height: 1;
+      color: var(--taxi-red);
+    }
+    .lightbox .zh {
+      font-family: "PingFang HK", "Noto Sans HK", "Microsoft JhengHei", sans-serif;
+      font-weight: 700; font-size: 38px; line-height: 1.05;
+      color: var(--taxi-red); text-align: center;
+    }
+
+    /* ---------- FOR HIRE flip disc ---------- */
+    .flag-anchor {
+      position: absolute; left: 0; top: 0;
+      /* hinge line: top of tray, just behind the pad */
+      transform: translate3d(200px, -23px, -62px);
+    }
+    .flag {
+      --fold: 0deg;                 /* 0 = upright, -90deg = folded flat */
+      position: absolute; left: 0; top: 0; width: 0; height: 0;
+      transform-origin: 0 0;
+      transform: rotateX(var(--fold));
+      transition: transform .8s cubic-bezier(.3, 1.45, .5, 1);
+      cursor: pointer;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .taxi[data-state="up"]   .flag { --fold: 0deg; }
+    .taxi[data-state="down"] .flag { --fold: -90deg; }
+    .taxi[data-state="up"]   .flag:hover { --fold: -5deg; }
+    .taxi[data-state="down"] .flag:hover { --fold: -84deg; }
+    .flag:focus-visible .disc-front { box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--accent); }
+
+    .disc { position: absolute; left: -65px; top: -130px; width: 130px; height: 130px; }
+    .disc > * { position: absolute; inset: 0; border-radius: 50%; }
+    .disc-rim { background: #e9e9e9; }
+    .disc-front {
+      transform: translateZ(3px);
+      background: radial-gradient(circle at 35% 28%, #e8363c, var(--taxi-red) 55%, #b81c23);
+      display: grid; place-content: center; text-align: center; gap: 2px; color: #fff;
+    }
+    .disc-front::before {
+      content: ""; position: absolute; inset: 7px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,.95);
+    }
+    .disc-front .zh {
+      font-family: "PingFang HK", "Noto Sans HK", "Microsoft JhengHei", sans-serif;
+      font-weight: 800; font-size: 40px; line-height: 1; letter-spacing: 2px;
+    }
+    .disc-front .en {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 700; font-size: 17px; letter-spacing: 1.5px; line-height: 1;
+    }
+    .disc-back {
+      transform: rotateY(180deg) translateZ(3px);
+      background: radial-gradient(circle at 35% 28%, #3a3a3e, #1b1b1e 70%);
+    }
+    .disc-back::before {
+      content: ""; position: absolute; inset: 7px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,.18);
+    }
+
+    /* ---------- Readout ---------- */
+    .readout {
+      display: inline-flex; align-items: center; gap: .7rem;
+      margin-top: .5rem; padding: .55rem 1rem;
+      border: 1px solid var(--line); border-radius: 999px;
+      font-size: .85rem; color: var(--ink-soft); background: rgba(255,255,255,.5);
+    }
+    .readout b { color: var(--ink); font-weight: 600; min-width: 11ch; text-align: left; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--taxi-red); transition: background .3s; }
+    .wrap[data-state="down"] .dot { background: #8a8a8a; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .flag { transition: transform .15s linear; }
+      .scene { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="eyebrow">Mechanism test</p>
+    <p class="hint">Click the red “FOR HIRE” disc to fold it down or up. (Theme is not wired yet.)</p>
+
+    <div class="stage-fit">
+      <div class="stage taxi" id="taxi" data-state="up">
+        <div class="floor-shadow"></div>
+        <div class="scene" id="scene">
+
+          <!-- table / base -->
+          <div class="slab base"><i class="t"></i><i class="fr"></i><i class="bk"></i><i class="lf"></i><i class="rt"></i></div>
+          <div class="slab flange"><i class="t"></i><i class="fr"></i><i class="bk"></i><i class="lf"></i><i class="rt"></i></div>
+
+          <!-- taxi light box -->
+          <div class="lightbox" aria-hidden="true">
+            <div class="face back"><span class="taxi-text">TAXI</span></div>
+            <div class="face cap cap-l"><span class="zh">的<br>士</span></div>
+            <div class="face cap cap-r"><span class="zh">的<br>士</span></div>
+            <div class="face lid"></div>
+            <div class="face front"><span class="taxi-text">TAXI</span></div>
+          </div>
+
+          <!-- flip-sign holder -->
+          <div class="slab tray"><i class="t"></i><i class="fr"></i><i class="bk"></i><i class="lf"></i><i class="rt"></i></div>
+          <div class="slab pad"><i class="t"></i><i class="fr"></i><i class="bk"></i><i class="lf"></i><i class="rt"></i></div>
+          <div class="slab hinge"><i class="t"></i><i class="fr"></i><i class="bk"></i><i class="lf"></i><i class="rt"></i></div>
+          <div class="slab post-l"><i class="t"></i><i class="fr"></i><i class="bk"></i><i class="lf"></i><i class="rt"></i></div>
+          <div class="slab post-r"><i class="t"></i><i class="fr"></i><i class="bk"></i><i class="lf"></i><i class="rt"></i></div>
+
+          <!-- the flip disc -->
+          <div class="flag-anchor">
+            <div class="flag" id="flag" role="button" tabindex="0"
+                 aria-pressed="false" aria-label="For hire sign — currently up. Press to fold down.">
+              <div class="disc">
+                <div class="disc-rim" style="transform: translateZ(-2px)"></div>
+                <div class="disc-rim" style="transform: translateZ(-1px)"></div>
+                <div class="disc-rim" style="transform: translateZ(0px)"></div>
+                <div class="disc-rim" style="transform: translateZ(1px)"></div>
+                <div class="disc-rim" style="transform: translateZ(2px)"></div>
+                <div class="disc-back"></div>
+                <div class="disc-front"><span class="zh">空車</span><span class="en">FOR HIRE</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="readout" aria-live="polite">
+      <span class="dot"></span>
+      <span>Sign state:</span> <b id="state-label" style="min-width:18ch">Up → light</b>
+      <span>Flips:</span> <b id="count" style="min-width:2ch">0</b>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var root = document.getElementById("taxi");
+      var flag = document.getElementById("flag");
+      var scene = document.getElementById("scene");
+      var label = document.getElementById("state-label");
+      var countEl = document.getElementById("count");
+      var count = 0;
+
+      function setState(state) {
+        root.dataset.state = state;
+        root.closest(".wrap").dataset.state = state;
+        var up = state === "up";
+        flag.setAttribute("aria-pressed", String(up));
+        flag.setAttribute("aria-label",
+          "For hire sign — currently " + (up ? "up. Press to fold down." : "folded down. Press to flip up."));
+        label.textContent = up ? "Up → light" : "Folded down → dark";
+        countEl.textContent = ++count;
+        // Hook for the light/dark mode step later:
+        // Mapping: up (FOR HIRE showing) = light, folded down = dark.
+        // Only reports the intended theme; no dark styling exists yet.
+        var theme = up ? "light" : "dark";
+        document.dispatchEvent(new CustomEvent("taxi-flip", { detail: { state: state, theme: theme } }));
+      }
+      function toggle() { setState(root.dataset.state === "up" ? "down" : "up"); }
+
+      flag.addEventListener("click", toggle);
+      flag.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+      });
+
+      // Fit stage to narrow screens
+      function fit() {
+        var s = Math.min(1, (window.innerWidth - 32) / 760);
+        document.documentElement.style.setProperty("--s", s.toFixed(3));
+      }
+      fit(); window.addEventListener("resize", fit);
+
+      // Gentle pointer parallax
+      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!reduce && window.matchMedia("(pointer: fine)").matches) {
+        window.addEventListener("mousemove", function (e) {
+          var nx = e.clientX / window.innerWidth - 0.5;
+          var ny = e.clientY / window.innerHeight - 0.5;
+          scene.style.setProperty("--ry", (18 + nx * 14).toFixed(2) + "deg");
+          scene.style.setProperty("--rx", (-16 + ny * -8).toFixed(2) + "deg");
+        });
+      }
+
+      // Debug hook for testing
+      window.taxiToggle = { toggle: toggle, get state() { return root.dataset.state; } };
+    })();
+  </script>
+</body>
+</html>

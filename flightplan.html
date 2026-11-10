@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matthew Au-Yeung — Flight Plan</title>
+  <meta name="description" content="Matthew Au-Yeung, Senior Product Designer. A flight-plan portfolio of travel-tech, commerce, and marketplace product work." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Geist:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #faf5f5;          /* soft peach */
+      --ink: #17160f;         /* rangoon green / near-black */
+      --blue: #2857ee;        /* royal blue accent */
+      --muted: #6b685f;
+      --line: #e4ddd8;
+      --mono: "DM Mono", ui-monospace, monospace;
+      --sans: "Geist", system-ui, -apple-system, sans-serif;
+      --pad: clamp(1.25rem, 5vw, 4rem);
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    ::selection { background: var(--blue); color: #fff; }
+    .mono { font-family: var(--mono); }
+
+    /* ============ SCANNER ENTRANCE ============ */
+    #gate {
+      position: fixed; inset: 0; z-index: 1000;
+      display: grid; place-items: center;
+      background:
+        radial-gradient(120% 120% at 50% 0%, #fff 0%, transparent 55%),
+        var(--bg);
+      transition: opacity .6s var(--ease), visibility .6s;
+      overflow: hidden;
+    }
+    #gate.hidden { opacity: 0; visibility: hidden; }
+
+    /* Stage */
+    .scan-stage { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1.1rem; }
+    .scan-caption { margin-bottom: .6rem; font-family: var(--mono); font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-align: center; }
+    .scan-caption b { color: var(--blue); }
+
+    /* Shimmer text: same technique and defaults as shadcn's `shimmer` utility.
+       The text is its own colour; a soft band (the colour at 20% strength) sweeps across it.
+       Options: --shimmer-duration (2s), --shimmer-color, --shimmer-spread (3ch + 40px), --shimmer-angle (20deg). */
+    .shimmer {
+      --_spread: var(--shimmer-spread, calc(3ch + 40px));
+      --_base: currentColor;
+      --_highlight: var(--shimmer-color, color-mix(in srgb, currentColor 20%, transparent));
+      background-image: linear-gradient(calc(90deg + var(--shimmer-angle, 20deg)),
+        var(--_base) calc(50% - var(--_spread)),
+        color-mix(in oklch, var(--_highlight), var(--_base) 50%) calc(50% - var(--_spread) * .5),
+        var(--_highlight) 50%,
+        color-mix(in oklch, var(--_highlight), var(--_base) 50%) calc(50% + var(--_spread) * .5),
+        var(--_base) calc(50% + var(--_spread)));
+      background-repeat: no-repeat;
+      background-size: calc(200% + var(--_spread) * 2) 100%;
+      background-position: 0 0;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer var(--shimmer-duration, 2s) linear infinite;
+    }
+    @keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .shimmer { animation: none; background-image: none; -webkit-text-fill-color: currentColor; }
+    }
+
+    /* Red ambient glow when scanning */
+    .scan-glow {
+      position: absolute; left: 50%; top: 46%; width: 460px; height: 200px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(ellipse at center, rgba(255,59,48,.4), transparent 70%);
+      opacity: 0; transition: opacity .3s var(--ease); pointer-events: none; z-index: 1;
+    }
+    #gate.near .scan-glow { opacity: 1; }
+    #gate.success .scan-glow { background: radial-gradient(ellipse at center, rgba(48,209,88,.35), transparent 70%); }
+
+    /* Scanner — real 3D, viewed from the top-front (~45–55° elevation) */
+    /* The whole 3D scene lives in a fixed 480×700 design box. JS scales that box uniformly (--k) to fit
+       any viewport, so angle, perspective, ratio and proportions are identical on desktop, tablet and phone. */
+    .scanner-fit { position: relative; z-index: 3; width: calc(480px * var(--k, 1)); height: calc(700px * var(--k, 1)); flex: none; }
+    .scanner-wrap { position: absolute; left: 0; top: 0; width: 480px; height: 700px; transform-origin: 0 0; transform: scale(var(--k, 1)); perspective: 2000px; perspective-origin: 50% 236px; }
+    .scene {
+      position: absolute; left: 50%; top: 126px; width: 320px; height: 250px; margin-left: -160px; transform-origin: 160px 125px;
+      transform-style: preserve-3d;
+      transform: rotateX(35deg);
+    }
+    .scene * { transform-style: preserve-3d; }
+    .box { position: absolute; left: 0; top: 0; width: calc(var(--w) * 1px); height: calc(var(--d) * 1px); transform: translateZ(calc(var(--z) * 1px)); }
+    .f { position: absolute; left: 0; top: 0; transform-origin: 0 0; backface-visibility: hidden; }
+    .f--top   { left: -.5px; top: -.5px; width: calc(var(--w) * 1px + 1px); height: calc(var(--d) * 1px + 1px); transform: translateZ(calc(var(--h) * 1px)); }
+    .f--front { left: -.5px; width: calc(var(--w) * 1px + 1px); height: calc(var(--h) * 1px + .5px); transform: matrix3d(1,0,0,0, 0,0,-1,0, 0,1,0,0, 0,var(--d),calc(var(--h) + .5),1); }
+    .f--left  { width: calc(var(--d) * 1px); height: calc(var(--h) * 1px); transform: matrix3d(0,1,0,0, 0,0,-1,0, -1,0,0,0, 0,0,var(--h),1); }
+    .f--right { width: calc(var(--d) * 1px); height: calc(var(--h) * 1px); transform: matrix3d(0,1,0,0, 0,0,-1,0, 1,0,0,0, var(--w),0,var(--h),1); }
+
+    .box--base  { --w: 320; --d: 250; --h: 44;  --z: 0; }
+    .box--spine { --w: 320; --d: 56;  --h: 200; --z: 0; }
+    .box--head  { --w: 320; --d: 250; --h: 48;  --z: 152; }
+    .box--base .f--top  { background: linear-gradient(160deg, #34322a, #1b1a14); box-shadow: inset 0 0 30px rgba(0,0,0,.55); }
+    .box--base .f--front, .box--spine .f--front { background: linear-gradient(180deg, #2b2a23, #12110d); }
+    .box--base .f--left, .box--spine .f--left, .box--head .f--left { background: linear-gradient(90deg, #14130e, #24231c); }
+    .box--base .f--right, .box--spine .f--right, .box--head .f--right { background: linear-gradient(90deg, #24231c, #0f0e0a); }
+    .box--spine .f--top { background: #1d1c16; }
+    .box--head .f--top { background: linear-gradient(160deg, #3a382f 0%, #26241d 55%, #17160f 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+    .box--head .f--front { background: linear-gradient(180deg, #2e2d25, #14130e); display: flex; align-items: center; justify-content: center; }
+    .box__label { font-family: var(--mono); font-size: 13px; letter-spacing: .34em; text-transform: uppercase; color: #8b8878; padding-left: .34em; }
+
+    /* Head top: split lamp + display */
+    .lamps { position: absolute; left: 85px; top: 196px; width: 150px; height: 16px; display: flex; border-radius: 9px; overflow: hidden; box-shadow: 0 0 0 3px #0b0b07; }
+    .lamp { flex: 1; transition: background .2s var(--ease), box-shadow .2s var(--ease); }
+    .lamp--green { background: #274b2d; }
+    .lamp--red { background: #4d2621; }
+    #gate.near .lamp--red { background: #ff3b30; box-shadow: 0 0 16px rgba(255,59,48,.9), 0 0 34px rgba(255,59,48,.6); }
+    #gate.success .lamp--red { background: #4d2621; box-shadow: none; }
+    #gate.success .lamp--green { background: #30d158; box-shadow: 0 0 16px rgba(48,209,88,.95), 0 0 34px rgba(48,209,88,.6); }
+    .dispscreen {
+      position: absolute; left: 22px; right: 22px; top: 22px; height: 150px; border-radius: 10px;
+      background: linear-gradient(180deg, #0e0e09, #060604);
+      box-shadow: inset 0 3px 12px rgba(0,0,0,.85), inset 0 0 0 1px rgba(255,255,255,.05);
+      display: flex; flex-direction: column; gap: 14px; align-items: center; justify-content: center;
+    }
+    .dispscreen__hint { font-family: var(--mono); font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: #5f5d52; white-space: nowrap; }
+    .dispscreen__hint b { font-weight: 400; color: #7d93e8; }
+    /* Base top: recessed scan window + light sheet in the slot */
+    .glass { position: absolute; left: 70px; right: 70px; top: 96px; height: 90px; border-radius: 8px; background: linear-gradient(180deg, #050504, #0d0d09); box-shadow: inset 0 2px 10px #000, 0 0 0 7px #1f1e18, 0 0 0 8px rgba(255,255,255,.06); transition: box-shadow .2s var(--ease); }
+    #gate.near .glass { box-shadow: inset 0 2px 10px #000, inset 0 0 22px rgba(255,59,48,.75), 0 0 0 7px #1f1e18, 0 0 0 8px rgba(255,255,255,.06); }
+    #gate.success .glass { box-shadow: inset 0 2px 10px #000, inset 0 0 22px rgba(48,209,88,.75), 0 0 0 7px #1f1e18, 0 0 0 8px rgba(255,255,255,.06); }
+    /* Scan light: spreads from under the head across the slot and lights the phone, plus a halo leaking out onto the surface */
+    .glow, .halo { position: absolute; pointer-events: none; opacity: 0; transition: opacity .25s var(--ease); }
+    .glow {
+      left: -20px; top: 30px; width: 360px; height: 330px; transform: translateZ(60.5px);
+      background:
+        radial-gradient(ellipse 56% 44% at 50% 56%, rgba(255,70,55,.78) 0%, rgba(255,59,48,.4) 40%, transparent 74%);
+      border-radius: 40px;
+    }
+    .halo {
+      left: -70px; top: -30px; width: 460px; height: 400px; transform: translateZ(-.5px);
+      background: radial-gradient(ellipse 50% 46% at 50% 48%, rgba(255,59,48,.5), rgba(255,59,48,.18) 55%, transparent 78%);
+      filter: blur(14px);
+    }
+    #gate.near .glow, #gate.near .halo { opacity: 1; }
+    #gate.success .glow, #gate.success .halo { opacity: 1; }
+    #gate.success .glow { background: radial-gradient(ellipse 56% 44% at 50% 56%, rgba(60,220,110,.75) 0%, rgba(48,209,88,.36) 40%, transparent 74%); }
+    #gate.success .halo { background: radial-gradient(ellipse 50% 46% at 50% 48%, rgba(48,209,88,.45), rgba(48,209,88,.16) 55%, transparent 78%); }
+    .floor-shadow { position: absolute; left: -26px; top: 18px; width: 372px; height: 290px; border-radius: 30px; background: rgba(23,22,15,.3); filter: blur(26px); transform: translateZ(-1px); }
+
+    .scanner__status { transition: color .3s, text-shadow .3s; text-align: center; letter-spacing: .14em; font-size: 19px; line-height: 1.7; white-space: pre-line; }
+    #gate.near .scanner__status { color: #ff6b62; text-shadow: 0 0 10px rgba(255,59,48,.7); }
+    #gate.success .scanner__status { color: #5fe088; text-shadow: 0 0 10px rgba(48,209,88,.7); }
+
+    /* Phone (Wallet-style QR) */
+    .phone3d { position: absolute; left: 75px; top: 250px; width: 170px; height: 340px; transform: translateZ(58px); }
+    .phone {
+      width: 170px; height: 340px; position: relative;
+      cursor: grab; touch-action: none; user-select: none;
+      will-change: transform; transform-style: preserve-3d; transform-origin: 50% 100%;
+    }
+    /* Thickness: stacked rim slices + glass face on top, soft shadow beneath */
+    .phone__edge { position: absolute; inset: 0; border-radius: 32px; pointer-events: none; }
+    .phone__shadow { position: absolute; inset: 6px -4px -10px; border-radius: 36px; background: rgba(0,0,0,.5); filter: blur(9px); transform: translateZ(-12px); pointer-events: none; }
+    .phone__face {
+      position: absolute; inset: 0; border-radius: 32px; padding: 4px;
+      background: #07070a;
+      box-shadow:
+        0 0 0 1.5px #b9b6a9,                 /* polished titanium rim */
+        0 0 0 2.5px #5e5c52,
+        inset 0 0 0 1px rgba(255,255,255,.1),
+        inset 0 0 14px rgba(0,0,0,.8);       /* black bezel depth */
+      transform: translateZ(0);
+    }
+    /* glass: diagonal sheen + soft edge reflection */
+    .phone__face::after {
+      content: ""; position: absolute; inset: 4px; border-radius: 28px; pointer-events: none;
+      background:
+        linear-gradient(112deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,.08) 22%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 72%, rgba(255,255,255,.12) 100%),
+        radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,.16), transparent 60%);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.07);
+    }
+    .phone__screen { width: 100%; height: 100%; border-radius: 28px; background: linear-gradient(180deg, #f3efe9, #eceae4); overflow: hidden; padding: 14px; position: relative; }
+    .phone__notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 50px; height: 14px; border-radius: 8px; background: #050507; z-index: 3; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+    .phone__notch::after { content: ""; position: absolute; right: 7px; top: 4px; width: 6px; height: 6px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #3b4a7a, #0b0d18 70%); }
+    .phone__home { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 56px; height: 4px; border-radius: 2px; background: rgba(0,0,0,.35); z-index: 3; }
+    /* Bottom edge: USB-C + speaker grilles (visible once the phone lies flat) */
+    .phone__port {
+      position: absolute; left: 24px; top: 340px; width: 122px; height: 9px; transform-origin: 0 0; transform: rotateX(-90deg);
+      background: linear-gradient(90deg, #4b493f, #8c897c 50%, #4b493f); border-radius: 0 0 4px 4px;
+    }
+    .phone__port::before { content: ""; position: absolute; left: 50%; top: 2.5px; width: 26px; height: 4px; margin-left: -13px; border-radius: 3px; background: #0a0a0c; box-shadow: inset 0 1px 1px #000; }
+    .phone__port::after {
+      content: ""; position: absolute; inset: 3px 0; border-radius: 3px;
+      background:
+        radial-gradient(circle, #121214 0 .9px, transparent 1.2px) 6px 0 / 4px 4px repeat-x,
+        radial-gradient(circle, #121214 0 .9px, transparent 1.2px) calc(100% - 6px) 0 / 4px 4px repeat-x;
+      -webkit-mask: linear-gradient(90deg, #000 0 28%, transparent 28% 72%, #000 72%); mask: linear-gradient(90deg, #000 0 28%, transparent 28% 72%, #000 72%);
+    }
+    .ticket {
+      border-radius: 16px; background: #fff; box-shadow: 0 8px 20px rgba(0,0,0,.14);
+      padding: 14px; height: 100%; display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden;
+    }
+    .ticket__head { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; padding-top: 0; }
+    .ticket__brand { color: var(--blue); font-weight: 500; }
+    .ticket__seat { color: var(--muted); }
+    .ticket__route { font-weight: 600; font-size: 1.2rem; letter-spacing: -.01em; }
+    .ticket__route span { color: var(--muted); font-weight: 400; }
+    .qr { width: 100%; aspect-ratio: 1; margin: 10px 0 4px; display: grid; grid-template-columns: repeat(29, 1fr); background: #fff; }
+    .qr i { display: block; }
+    .qr i.on { background: #17160f; }
+    .ticket__foot { margin-top: auto; font-family: var(--mono); font-size: .6rem; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
+
+    /* ============ MAIN SITE ============ */
+    #site { opacity: 0; transform: translateY(12px); transition: opacity .8s var(--ease) .1s, transform .8s var(--ease) .1s; }
+    #site.ready { opacity: 1; transform: none; }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem var(--pad);
+      background: rgba(250,245,245,.7);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid transparent;
+      transition: border-color .3s var(--ease);
+    }
+    .topbar.scrolled { border-color: var(--line); }
+    .topbar .brand { font-family: var(--mono); font-size: .82rem; letter-spacing: .16em; text-transform: uppercase; }
+    .topbar nav { display: flex; gap: 1.4rem; }
+    .topbar nav a { font-family: var(--mono); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; position: relative; }
+    .topbar nav a::after { content:""; position:absolute; left:0; bottom:-3px; width:100%; height:1px; background: var(--blue); transform: scaleX(0); transform-origin:right; transition: transform .4s var(--ease); }
+    .topbar nav a:hover::after { transform: scaleX(1); transform-origin:left; }
+
+    /* Hero */
+    .hero { padding: clamp(4rem,11vw,8rem) var(--pad) clamp(3rem,7vw,5rem); }
+    .hero__coords { font-family: var(--mono); font-size: .74rem; letter-spacing: .1em; color: var(--muted); display:flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2.2rem; }
+    .hero__coords .dot { color: var(--blue); }
+    .hero h1 {
+      font-weight: 600; font-size: clamp(2.6rem, 9vw, 6.5rem);
+      letter-spacing: -.03em; line-height: .98; margin: 0 0 1.4rem;
+    }
+    .hero h1 .accent { color: var(--blue); }
+    .hero p.lead { max-width: 54ch; font-size: clamp(1rem,1.6vw,1.25rem); color: var(--muted); margin: 0 0 2.4rem; }
+    .hero .actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn {
+      font-family: var(--mono); font-size: .82rem; letter-spacing: .06em; text-transform: uppercase;
+      padding: .85rem 1.4rem; border-radius: 999px; border: 1px solid var(--ink);
+      display: inline-flex; gap: .5rem; align-items: center; cursor: pointer;
+      transition: transform .4s var(--ease), background .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease);
+      will-change: transform;
+    }
+    .btn--primary { background: var(--ink); color: var(--bg); }
+    .btn--primary:hover { background: var(--blue); border-color: var(--blue); }
+    .btn--ghost { background: transparent; }
+    .btn--ghost:hover { background: var(--ink); color: var(--bg); }
+
+    /* Flight log */
+    .log { padding: clamp(3rem,7vw,5rem) var(--pad); border-top: 1px solid var(--line); }
+    .log__head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .log__head h2 { font-weight: 600; font-size: clamp(1.6rem,3.4vw,2.4rem); margin: 0; letter-spacing: -.02em; }
+    .log__head .sub { font-family: var(--mono); font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .log__intro { max-width: 60ch; color: var(--muted); margin: 0 0 2.5rem; }
+
+    .leg { border-top: 1px solid var(--line); }
+    .leg:last-child { border-bottom: 1px solid var(--line); }
+    .leg__head {
+      display: grid; grid-template-columns: auto 1fr auto; gap: 1.5rem;
+      align-items: center; padding: 1.6rem 0; cursor: pointer;
+      transition: padding-left .4s var(--ease);
+    }
+    .leg__head:hover { padding-left: .6rem; }
+    .leg__num { font-family: var(--mono); font-size: .9rem; color: var(--blue); }
+    .leg__main { display: flex; flex-direction: column; gap: .35rem; }
+    .leg__route { font-family: var(--mono); font-size: .8rem; letter-spacing: .08em; color: var(--muted); }
+    .leg__title { font-weight: 600; font-size: clamp(1.25rem,2.6vw,1.8rem); letter-spacing: -.01em; }
+    .leg__role { font-size: .9rem; color: var(--muted); }
+    .leg__tag {
+      font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--blue); border: 1px solid var(--blue); border-radius: 999px; padding: .3rem .7rem;
+      display: inline-flex; align-items: center; gap: .4rem;
+    }
+    .leg__plus {
+      width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 50%;
+      display: grid; place-items: center; font-size: 1.2rem; position: relative;
+      transition: background .35s var(--ease), transform .5s var(--ease), border-color .35s var(--ease);
+    }
+    .leg.open .leg__plus { background: var(--ink); color: var(--bg); transform: rotate(135deg); border-color: var(--ink); }
+
+    .leg__panel { overflow: hidden; max-height: 0; transition: max-height .6s var(--ease); }
+    .leg__inner { padding: 0 0 2rem; }
+    .leg__desc { color: var(--muted); max-width: 62ch; margin: 0 0 1.5rem; }
+    .leg__stats { display: flex; gap: 2.5rem; flex-wrap: wrap; margin: 0 0 1.6rem; }
+    .leg__stat b { font-weight: 600; font-size: 1.6rem; letter-spacing: -.02em; display: block; }
+    .leg__stat span { font-family: var(--mono); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .case {
+      display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 1rem;
+      padding: 1.1rem 0; border-top: 1px solid var(--line);
+      transition: padding-left .4s var(--ease);
+    }
+    .case:hover { padding-left: .5rem; }
+    .case .c-star { color: var(--blue); font-family: var(--mono); }
+    .case .c-name { font-weight: 500; }
+    .case .c-note { color: var(--muted); font-size: .9rem; }
+    .case .c-arrow { opacity: 0; transform: translateX(-6px); transition: opacity .3s var(--ease), transform .3s var(--ease); color: var(--blue); }
+    .case:hover .c-arrow { opacity: 1; transform: none; }
+
+    /* Capabilities band (marquee) */
+    .marquee { overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 1rem 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+    .marquee__track { display: inline-flex; white-space: nowrap; animation: marquee 26s linear infinite; }
+    .marquee__track span { font-family: var(--mono); font-size: .9rem; letter-spacing: .1em; text-transform: uppercase; display: inline-flex; gap: 2.5rem; padding-right: 2.5rem; }
+    .marquee__track .dot { color: var(--blue); }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* About */
+    .about { padding: clamp(3.5rem,8vw,6rem) var(--pad); }
+    .about__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+    .about h2 { font-weight: 600; font-size: clamp(1.6rem,3.4vw,2.4rem); margin: 0 0 1.4rem; letter-spacing: -.02em; }
+    .about p { color: var(--muted); margin: 0 0 1rem; }
+    .about .big { font-size: 1.15rem; color: var(--ink); }
+
+    /* Contact */
+    .contact { padding: clamp(3.5rem,8vw,6rem) var(--pad); border-top: 1px solid var(--line); }
+    .contact .eyebrow { font-family: var(--mono); font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); display: block; margin-bottom: 1.4rem; }
+    .contact h2 { font-weight: 600; font-size: clamp(2rem,6vw,4rem); line-height: 1.02; letter-spacing: -.03em; margin: 0 0 2rem; }
+    .contact .links { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-top: 1.6rem; color: var(--muted); }
+    .contact .links a { border-bottom: 1px solid transparent; transition: color .3s var(--ease), border-color .3s var(--ease); }
+    .contact .links a:hover { color: var(--ink); border-color: var(--ink); }
+
+    footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; padding: 1.5rem var(--pad); border-top: 1px solid var(--line); font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; color: var(--muted); }
+
+    /* Cursor dot */
+    .cursor { position: fixed; top:0; left:0; width:8px; height:8px; margin:-4px 0 0 -4px; border-radius:50%; background: var(--blue); pointer-events:none; z-index:2000; opacity:0; transition: width .28s var(--ease), height .28s var(--ease), margin .28s var(--ease), background .28s var(--ease); mix-blend-mode: multiply; }
+    .cursor.active { width:44px; height:44px; margin:-22px 0 0 -22px; background: rgba(40,87,238,.16); }
+    @media (pointer: coarse) { .cursor { display: none; } }
+
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+    .reveal.in { opacity: 1; transform: none; }
+
+    @media (max-width: 720px) {
+      .pass { grid-template-columns: 1fr; }
+      .pass__stub { border-left: none; border-top: 1px dashed var(--line); min-width: 0; flex-direction: row; }
+      .pass__stub::before { top: -9px; left: 50%; transform: translateX(-50%); }
+      .pass__stub::after { display: none; }
+      .pass__bar { width: 120px; height: 34px; background: repeating-linear-gradient(90deg, var(--ink) 0 3px, transparent 3px 6px, var(--ink) 6px 8px, transparent 8px 12px); }
+      .leg__head { grid-template-columns: auto 1fr; }
+      .leg__plus { grid-column: 2; justify-self: end; }
+      .about__grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .marquee__track { animation: none; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .cursor { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cursor" aria-hidden="true"></div>
+
+  <!-- ============ SCANNER GATE ============ -->
+  <div id="gate" role="dialog" aria-label="Ticket scanner. Drag the phone up to scan and board.">
+    <div class="scan-glow" aria-hidden="true"></div>
+    <div class="scan-stage">
+      <div class="scan-caption shimmer">Scan your boarding pass</div>
+      <div class="scanner-fit" id="fit">
+      <div class="scanner-wrap">
+        <div class="scene" id="scanner">
+          <div class="floor-shadow" aria-hidden="true"></div>
+          <div class="box box--spine" aria-hidden="true">
+            <div class="f f--front"></div><div class="f f--left"></div><div class="f f--right"></div><div class="f f--top"></div>
+          </div>
+          <div class="box box--base" aria-hidden="true">
+            <div class="f f--front"></div><div class="f f--left"></div><div class="f f--right"></div>
+            <div class="f f--top"><div class="glass"></div></div>
+          </div>
+          <div class="halo" aria-hidden="true"></div>
+          <div class="phone3d">
+            <div class="phone" id="phone">
+              <div class="phone__shadow"></div>
+              <div class="phone__edges"></div>
+              <div class="phone__face">
+              <div class="phone__screen">
+                <div class="phone__notch" aria-hidden="true"></div>
+                <div class="phone__home" aria-hidden="true"></div>
+                <div class="ticket">
+                  <div class="qr" id="qr" role="img" aria-label="Boarding QR code"></div>
+                  <div class="ticket__route">HKG <span>→</span> LHR</div>
+                  <div class="ticket__head"><span class="ticket__brand">MAT ✈</span><span class="ticket__seat">1A · W</span></div>
+                  <div class="ticket__foot">M. Au-Yeung · Senior PD</div>
+                </div>
+              </div>
+              </div>
+            </div>
+          </div>
+          <div class="glow" aria-hidden="true"></div>
+          <div class="box box--head" aria-hidden="true">
+            <div class="f f--left"></div><div class="f f--right"></div>
+            <div class="f f--front"><span class="box__label">Design in flight</span></div>
+            <div class="f f--top">
+              <div class="dispscreen"><span class="box__label scanner__status" id="status">Now boarding</span></div>
+              <div class="lamps"><span class="lamp lamp--green"></span><span class="lamp lamp--red"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SITE ============ -->
+  <div id="site">
+    <header class="topbar" id="topbar">
+      <a class="brand" href="#top">Matthew Au-Yeung</a>
+      <nav aria-label="Primary">
+        <a href="#log">Flight log</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero__coords">
+          <span>51.5072° N, 0.1276° W</span>
+          <span class="dot">·</span>
+          <span>London, GMT+0</span>
+          <span class="dot">·</span>
+          <span>Availability: 2026</span>
+        </div>
+        <h1>
+          Senior Product<br/>
+          Designer, <span class="accent">in flight</span>
+          over commerce.
+        </h1>
+        <p class="lead">
+          I design and lead product across travel-tech, marketplaces, and
+          booking flows — turning complex transactions into calm, confident
+          experiences that move numbers.
+        </p>
+        <div class="actions">
+          <a class="btn btn--primary" href="#log" data-magnetic>View flight log</a>
+          <a class="btn btn--ghost" href="#contact" data-magnetic>Get in touch</a>
+        </div>
+      </section>
+
+      <section class="log" id="log">
+        <div class="log__head">
+          <h2>Flight log</h2>
+          <span class="sub">2019 → Now · 04 legs</span>
+        </div>
+        <p class="log__intro">
+          A record of the routes I've flown and the work shipped along the way.
+          Each leg expands to the projects I led.
+        </p>
+
+        <!-- LEG 1 -->
+        <article class="leg reveal" data-leg>
+          <div class="leg__head" role="button" tabindex="0" aria-expanded="false">
+            <span class="leg__num">01</span>
+            <div class="leg__main">
+              <span class="leg__route">LON → 20XX · <span class="leg__tag">Current</span></span>
+              <span class="leg__title">TravelTech Company</span>
+              <span class="leg__role">Senior Product Designer — commerce &amp; marketplace</span>
+            </div>
+            <span class="leg__plus" aria-hidden="true">+</span>
+          </div>
+          <div class="leg__panel">
+            <div class="leg__inner">
+              <p class="leg__desc">
+                Own and lead design end-to-end for the core booking and
+                marketplace experience, from problem framing to shipped,
+                measured product.
+              </p>
+              <div class="leg__stats">
+                <div class="leg__stat"><b data-count="18" data-prefix="+" data-suffix="%">+0%</b><span>booking completion</span></div>
+                <div class="leg__stat"><b data-count="4.2" data-decimals="1" data-suffix="×">0×</b><span>faster checkout</span></div>
+              </div>
+              <a class="case" href="#"><span class="c-star">✳</span><div><div class="c-name">Project A</div><div class="c-note">Marketplace checkout &amp; payment flows</div></div><span class="c-arrow">→</span></a>
+              <a class="case" href="#"><span class="c-star">✳</span><div><div class="c-name">Project B</div><div class="c-note">Design system for the booking platform</div></div><span class="c-arrow">→</span></a>
+            </div>
+          </div>
+        </article>
+
+        <!-- LEG 2 -->
+        <article class="leg reveal" data-leg>
+          <div class="leg__head" role="button" tabindex="0" aria-expanded="false">
+            <span class="leg__num">02</span>
+            <div class="leg__main">
+              <span class="leg__route">LON → 20XX</span>
+              <span class="leg__title">Marketplace Start-up</span>
+              <span class="leg__role">Product Designer — search &amp; discovery</span>
+            </div>
+            <span class="leg__plus" aria-hidden="true">+</span>
+          </div>
+          <div class="leg__panel">
+            <div class="leg__inner">
+              <p class="leg__desc">
+                Led design for search, discovery, and personalization in a
+                fast-moving marketplace.
+              </p>
+              <div class="leg__stats">
+                <div class="leg__stat"><b data-count="31" data-prefix="+" data-suffix="%">+0%</b><span>search → detail</span></div>
+              </div>
+              <a class="case" href="#"><span class="c-star">✳</span><div><div class="c-name">Project C</div><div class="c-note">Search &amp; discovery re-architecture</div></div><span class="c-arrow">→</span></a>
+            </div>
+          </div>
+        </article>
+
+        <!-- LEG 3 -->
+        <article class="leg reveal" data-leg>
+          <div class="leg__head" role="button" tabindex="0" aria-expanded="false">
+            <span class="leg__num">03</span>
+            <div class="leg__main">
+              <span class="leg__route">LON → 20XX</span>
+              <span class="leg__title">Digital Agency</span>
+              <span class="leg__role">Designer — web &amp; mobile product</span>
+            </div>
+            <span class="leg__plus" aria-hidden="true">+</span>
+          </div>
+          <div class="leg__panel">
+            <div class="leg__inner">
+              <p class="leg__desc">
+                Shipped my first products across startup and enterprise
+                clients, honing craft and process.
+              </p>
+              <a class="case" href="#"><span class="c-star">✳</span><div><div class="c-name">Project D</div><div class="c-note">A native mobile experience</div></div><span class="c-arrow">→</span></a>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee__track">
+          <span>Travel tech <i class="dot">·</i> Commerce <i class="dot">·</i> Marketplaces <i class="dot">·</i> Checkout <i class="dot">·</i> Design systems <i class="dot">·</i> Research <i class="dot">·</i></span>
+          <span>Travel tech <i class="dot">·</i> Commerce <i class="dot">·</i> Marketplaces <i class="dot">·</i> Checkout <i class="dot">·</i> Design systems <i class="dot">·</i> Research <i class="dot">·</i></span>
+        </div>
+      </div>
+
+      <section class="about" id="about">
+        <div class="about__grid">
+          <div>
+            <h2>About</h2>
+            <p class="big">
+              I'm a senior product designer who owns and leads design from
+              the first problem to the shipped, measured product.
+            </p>
+          </div>
+          <div>
+            <p>[Differentiator — add your one line here, e.g. "I tie every design decision back to revenue and retention."]</p>
+            <p>[Approach — research, systems, and close collaboration with product and engineering. Add your own words.]</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="contact" id="contact">
+        <span class="eyebrow">Final stop</span>
+        <h2>Looking for a senior product designer who ships?</h2>
+        <a class="btn btn--primary" href="mailto:hello@yoursite.com" data-magnetic>hello@yoursite.com &nbsp;→</a>
+        <div class="links">
+          <a href="#" data-magnetic>LinkedIn</a>
+          <span>·</span>
+          <a href="#" data-magnetic>Dribbble</a>
+          <span>·</span>
+          <a href="mailto:hello@yoursite.com" data-magnetic>Email</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>© <span id="year"></span> Matthew Au-Yeung</span>
+      <span>Boarded &amp; in flight.</span>
+    </footer>
+  </div>
+
+  <script>
+  (function () {
+    "use strict";
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const fine = window.matchMedia("(pointer: fine)").matches;
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    /* ---- Scanner: drag phone up to scan ---- */
+    const gate = document.getElementById("gate");
+    const scanner = document.getElementById("scanner");
+    const phone = document.getElementById("phone");
+    const statusEl = document.getElementById("status");
+    const site = document.getElementById("site");
+    let state = "idle"; // idle | dragging | scanning | success
+    let dy = 0, targetDy = -180;
+    let startPointerY = 0, startDy = 0;
+
+    function board() {
+      if (gate.classList.contains("hidden")) return;
+      gate.classList.add("hidden");
+      site.classList.add("ready");
+      requestAnimationFrame(() => initAfterBoard());
+    }
+    /* Phone starts lying flat in front of the scanner and slides into the slot. */
+    const edges = phone.querySelector(".phone__edges");
+    const SLIDE = 1.14; // drag px → px of travel along the scanner's slot
+    let K = 1; // current scale of the design box
+    function setPhone(v) {
+      if (edges) edges.style.opacity = 1;
+      phone.style.transform = `translateY(${(v / K) * SLIDE}px)`;
+    }
+
+    function measure() { targetDy = -140 * K; } // slide the phone into the slot under the head
+
+    function doSuccess() {
+      if (state === "success") return;
+      state = "success";
+      gate.classList.remove("near");
+      scanner.classList.remove("near");
+      scanner.classList.add("success");
+      gate.classList.add("success");
+      statusEl.textContent = "Cleared for\ntake-off ✓";
+      setTimeout(board, 1500); // let the green lamp, light and "Boarding ✓" register before the page changes
+    }
+
+    function updateState() {
+      // Red lamp lights as soon as the drag starts; boarding only happens on release
+      const isNear = dy < -2;
+      gate.classList.toggle("near", isNear);
+      scanner.classList.toggle("near", isNear);
+      statusEl.textContent = !isNear ? "Now boarding" : dy <= targetDy * 0.86 ? "Release to\ntake off" : "Scanning…";
+    }
+
+    function pDown(e) {
+      if (state !== "idle") return;
+      state = "dragging";
+      startPointerY = (e.touches ? e.touches[0].clientY : e.clientY);
+      startDy = dy;
+      phone.style.transition = "none";
+      if (e.cancelable) e.preventDefault();
+    }
+    function pMove(e) {
+      if (state !== "dragging") return;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY);
+      let ndy = startDy + (y - startPointerY);
+      ndy = Math.min(30, Math.max(targetDy, ndy));
+      dy = ndy;
+      setPhone(dy);
+      updateState();
+    }
+    /* Release (finger/mouse lifted, or scrolling stopped): board if at the top, otherwise drop back */
+    function releasePhone() {
+      phone.style.transition = "transform .5s var(--ease)";
+      if (dy <= targetDy * 0.86) {   // released at the top → green + board
+        dy = targetDy; setPhone(dy);
+        doSuccess();
+        return;
+      }
+      dy = 0; setPhone(0); state = "idle";
+      gate.classList.remove("near");
+      scanner.classList.remove("near");
+      statusEl.textContent = "Now boarding";
+    }
+    function pUp() {
+      if (state !== "dragging") return;
+      releasePhone();
+    }
+
+    /* Scrolling down also raises the phone (scroll up lowers it). Reaching the top turns green immediately;
+       stopping short counts as letting go and the phone drops back. */
+    let wheelTimer = null;
+    window.addEventListener("wheel", (e) => {
+      if (gate.classList.contains("hidden") || state === "success" || state === "dragging") return;
+      e.preventDefault();
+      const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      state = "scrolling";
+      phone.style.transition = "none";
+      dy = Math.min(0, Math.max(targetDy, dy - delta * 0.5 * K));
+      setPhone(dy);
+      clearTimeout(wheelTimer);
+      if (dy <= targetDy + 0.5) {    // scrolled all the way up → green straight away, no need to stop scrolling
+        doSuccess();
+        return;
+      }
+      updateState();
+      wheelTimer = setTimeout(() => { if (state === "scrolling") releasePhone(); }, 320);
+    }, { passive: false });
+
+    /* Clicking the name in the top bar goes back to the scanner gate, reset and ready to scan again */
+    function resetGate() {
+      clearTimeout(wheelTimer);
+      window.scrollTo(0, 0);
+      site.classList.remove("ready");
+      gate.classList.remove("success", "near");
+      scanner.classList.remove("near", "success");
+      phone.style.transition = "none";
+      dy = 0; setPhone(0); state = "idle";
+      statusEl.textContent = "Now boarding";
+      requestAnimationFrame(() => {
+        gate.classList.remove("hidden");
+        setTimeout(() => { phone.style.transition = ""; }, 60);
+      });
+    }
+    const brandLink = document.querySelector(".brand");
+    if (brandLink) brandLink.addEventListener("click", (e) => { e.preventDefault(); resetGate(); });
+
+    phone.addEventListener("mousedown", pDown);
+    window.addEventListener("mousemove", pMove);
+    window.addEventListener("mouseup", pUp);
+    phone.addEventListener("touchstart", pDown, { passive: false });
+    window.addEventListener("touchmove", pMove, { passive: true });
+    window.addEventListener("touchend", pUp);
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !gate.classList.contains("hidden")) {
+        phone.style.transition = "transform .3s var(--ease)";
+        dy = targetDy; setPhone(targetDy);
+        doSuccess();
+      }
+    });
+    window.addEventListener("resize", () => { if (state === "idle") { measure(); setPhone(0); } });
+
+    /* Boarding QR → https://youtu.be/dQw4w9WgXcQ?si=NiMndHjBFlu8hmSU (version 3, ECC L, pre-encoded) */
+    (function buildQR() {
+      const qr = document.getElementById("qr");
+      if (!qr) return;
+      const rows = ["11111110101010001101001111111", "10000010111110000100001000001", "10111010111001010010101011101", "10111010111010100000101011101", "10111010000111111111001011101", "10000010001101000111001000001", "11111110101010101010101111111", "00000000001010101110000000000", "10111010101100111111100001111", "00100101001011011011001110001", "10101110011111101010010100110", "10111001111011001010111100001", "11100110111000100000110101100", "00000000100110111011001000111", "01101011011010001001110100111", "00100100010110001010011110010", "10000011001110010010010011010", "01001001100011000001100101110", "10001011001001111110010100100", "00000100000110101110001010100", "01010110100100110011111111100", "00000000100101000000100011111", "11111110011100001101101011010", "10000010010001001010100011001", "10111010111111100110111110110", "10111010101010011011010111011", "10111010111001100110100100101", "10000010010010100000100111010", "11111110110011101010110111010"];
+      qr.style.gridTemplateColumns = `repeat(${rows.length}, 1fr)`;
+      qr.innerHTML = rows.join("").split("").map((c) => `<i class="${c === "1" ? "on" : ""}"></i>`).join("");
+    })();
+
+    /* Phone thickness: stacked rim slices behind the glass face */
+    (function buildEdges() {
+      const host = document.querySelector(".phone__edges");
+      if (!host) return;
+      host.style.cssText = "position:absolute;inset:0;transform-style:preserve-3d;";
+      const n = 16, step = 0.55;          // 16 slices ≈ 8.8px of body
+      for (let i = 1; i <= n; i++) {
+        const d = document.createElement("div");
+        d.className = "phone__edge";
+        // rounded-rim lighting: bright chamfer near the glass, soft mid-tone, dark toward the back
+        const t = i / n;
+        const l = 18 + 40 * Math.exp(-Math.pow((t - 0.12) / 0.16, 2)) + 10 * (1 - t);
+        d.style.background = `linear-gradient(135deg, hsl(45 6% ${l + 8}%), hsl(45 5% ${l - 6}%))`;
+        d.style.transform = `translateZ(${-(i * step).toFixed(2)}px)`;
+        host.appendChild(d);
+      }
+      const port = document.createElement("div");
+      port.className = "phone__port";
+      port.style.height = `${n * step}px`;
+      host.appendChild(port);
+    })();
+
+    /* Fit: scale the fixed design box to whatever room the viewport leaves (contain), never distorting it */
+    const fitEl = document.getElementById("fit");
+    const capEl = document.querySelector(".scan-caption");
+    function fitScene() {
+      const availW = window.innerWidth - 24;
+      const availH = window.innerHeight - (capEl ? capEl.offsetHeight + 56 : 80);
+      K = Math.max(0.35, Math.min(1.3, availW / 480, availH / 700));
+      fitEl.style.setProperty("--k", K.toFixed(4));
+      measure();
+      if (state === "idle") setPhone(0);
+    }
+    fitScene();
+    window.addEventListener("resize", fitScene);
+
+    /* init positions */
+    requestAnimationFrame(() => { measure(); setPhone(0); });
+
+    /* ---- Post-board interactions ---- */
+    let boardedOnce = false;
+    function initAfterBoard() {
+      if (boardedOnce) return;
+      boardedOnce = true;
+      const topbar = document.getElementById("topbar");
+      const onScroll = () => topbar.classList.toggle("scrolled", window.scrollY > 20);
+      onScroll();
+      window.addEventListener("scroll", onScroll, { passive: true });
+
+      /* Reveal */
+      const rev = document.querySelectorAll(".reveal");
+      if ("IntersectionObserver" in window && !reduce) {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });
+        }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+        rev.forEach((el) => io.observe(el));
+      } else rev.forEach((el) => el.classList.add("in"));
+
+      /* Expandable legs */
+      document.querySelectorAll("[data-leg]").forEach((leg) => {
+        const head = leg.querySelector(".leg__head");
+        const panel = leg.querySelector(".leg__panel");
+        const toggle = () => {
+          const open = leg.classList.toggle("open");
+          head.setAttribute("aria-expanded", open ? "true" : "false");
+          panel.style.maxHeight = open ? panel.scrollHeight + "px" : "0px";
+          if (open) runCounts(panel);
+        };
+        head.addEventListener("click", toggle);
+        head.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+      });
+
+      /* Count-up */
+      const runCounts = (scope) => {
+        scope.querySelectorAll("[data-count]").forEach((el) => {
+          if (el.dataset.done) return;
+          el.dataset.done = "1";
+          const target = parseFloat(el.dataset.count || "0");
+          const dec = parseInt(el.dataset.decimals || "0", 10);
+          const prefix = el.dataset.prefix || "", suffix = el.dataset.suffix || "";
+          const fmt = (v) => prefix + v.toFixed(dec) + suffix;
+          if (reduce) { el.textContent = fmt(target); return; }
+          const dur = 1300; let start = null;
+          function step(ts){ if(!start) start=ts; const p=Math.min((ts-start)/dur,1); const e=1-Math.pow(1-p,3); el.textContent=fmt(target*e); if(p<1) requestAnimationFrame(step); }
+          requestAnimationFrame(step);
+        });
+      }
+      /* Magnetic */
+      if (fine && !reduce) {
+        document.querySelectorAll("[data-magnetic]").forEach((el) => {
+          const s = 0.3;
+          el.addEventListener("mousemove", (e) => {
+            const r = el.getBoundingClientRect();
+            const mx = e.clientX - (r.left + r.width/2), my = e.clientY - (r.top + r.height/2);
+            el.style.transform = `translate(${mx*s}px, ${my*s}px)`;
+          });
+          el.addEventListener("mouseleave", () => el.style.transform = "");
+        });
+
+        /* Cursor dot */
+        const cursor = document.querySelector(".cursor");
+        if (cursor) {
+          let cx=-100, cy=-100, tx=-100, ty=-100, shown=false;
+          window.addEventListener("mousemove", (e) => { tx=e.clientX; ty=e.clientY; if(!shown){shown=true; cursor.style.opacity="1";} });
+          (function loop(){ cx+=(tx-cx)*0.18; cy+=(ty-cy)*0.18; cursor.style.transform=`translate3d(${cx}px,${cy}px,0)`; requestAnimationFrame(loop); })();
+          document.querySelectorAll("a, button, [data-magnetic], .leg__head, .case").forEach((el) => {
+            el.addEventListener("mouseenter", () => cursor.classList.add("active"));
+            el.addEventListener("mouseleave", () => cursor.classList.remove("active"));
+          });
+        }
+      }
+    }
+  })();
+  </script>
+</body>
+</html>

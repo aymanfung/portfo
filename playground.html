@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interaction Playground — (hidden)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .pg { max-width: 1000px; margin: 0 auto; padding: 0 var(--pad) 6rem; }
+    .pg__intro { padding-top: clamp(4rem,10vw,7rem); }
+    .pg__intro p { color: var(--ink-soft); max-width: 60ch; }
+    .pg__hint { font-size: .8rem; letter-spacing:.12em; text-transform: uppercase; color: var(--accent); margin-bottom:1rem; }
+
+    .demo {
+      border-top: 1px solid var(--line);
+      padding: 3rem 0;
+      display: grid;
+      gap: 1.5rem;
+    }
+    .demo__head { display:flex; align-items:baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .demo__title { font-family: var(--serif); font-size: 1.6rem; margin: 0; font-weight: 500; }
+    .demo__desc { color: var(--ink-soft); max-width: 60ch; margin: 0; }
+    .demo__stage {
+      min-height: 160px;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 2rem;
+    }
+    .demo__tag { font-size:.75rem; letter-spacing:.1em; text-transform: uppercase; color: var(--ink-soft); }
+
+    /* B: hover zoom */
+    .zoom-frame {
+      width: min(420px, 80%);
+      aspect-ratio: 4/3;
+      border-radius: 6px;
+      overflow: hidden;
+      background: linear-gradient(135deg,#e9e5de,#ded9d0);
+      display:grid; place-items:center;
+      border:1px dashed var(--line);
+    }
+    .zoom-inner {
+      width: 100%; height: 100%;
+      display:grid; place-items:center;
+      font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft);
+      background:
+        radial-gradient(120% 120% at 20% 10%, #fff 0%, transparent 55%),
+        linear-gradient(135deg,#efe9e0,#dcd5ca);
+      transition: transform .8s var(--ease);
+    }
+    .zoom-frame:hover .zoom-inner { transform: scale(1.06); }
+
+    /* C: count up */
+    .count-stat { display:flex; align-items:baseline; gap:.6rem; }
+    .count-num { font-family: var(--serif); font-size: 3.2rem; font-weight: 500; line-height:1; letter-spacing:-.02em; }
+    .count-unit { font-size:1.4rem; color: var(--accent); }
+    .count-label { color: var(--ink-soft); margin-top:.4rem; }
+    .count-block { min-width: 200px; }
+    .replay {
+      align-self:center;
+      border:1px solid var(--ink); background:transparent; color:var(--ink);
+      padding:.5rem 1rem; border-radius:999px; cursor:pointer; font-family: var(--sans); font-size:.85rem;
+      transition: background .3s var(--ease), color .3s var(--ease);
+    }
+    .replay:hover { background:var(--ink); color:var(--bg); }
+
+    /* D: cursor label */
+    .cursor-label-target {
+      width: min(420px,80%);
+      aspect-ratio: 4/3;
+      border-radius: 6px;
+      overflow:hidden;
+      display:grid; place-items:center;
+      background: linear-gradient(135deg,#e9e5de,#ded9d0);
+      border:1px dashed var(--line);
+      color:var(--ink-soft); font-size:.8rem; letter-spacing:.12em; text-transform:uppercase;
+    }
+    .pg-cursor-label {
+      position: fixed; top:0; left:0; z-index:10000;
+      display:grid; place-items:center;
+      width:70px; height:70px; margin:-35px 0 0 -35px;
+      border-radius:50%;
+      background: var(--ink); color: var(--bg);
+      font-size:.7rem; letter-spacing:.08em; text-transform:uppercase;
+      pointer-events:none; opacity:0; transform: scale(.4);
+      transition: opacity .25s var(--ease), transform .25s var(--ease);
+    }
+    .pg-cursor-label.show { opacity:1; transform: scale(1); }
+
+    /* E: marquee */
+    .marquee {
+      overflow: hidden;
+      border-top:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      padding: 1.1rem 0;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    }
+    .marquee__track {
+      display:inline-flex; gap: 3rem; white-space: nowrap;
+      font-family: var(--serif); font-size: 1.6rem;
+      animation: marquee 22s linear infinite;
+      will-change: transform;
+    }
+    .marquee__track span { display:inline-flex; align-items:center; gap:3rem; }
+    .marquee__track .dot { color: var(--accent); }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* F: smooth scroll */
+    .smooth-scroller {
+      height: 260px; overflow-y: auto;
+      border:1px dashed var(--line); border-radius:8px;
+      padding: 1.5rem 2rem;
+      scroll-behavior: smooth;
+    }
+    .smooth-scroller p { max-width: 48ch; }
+    .smooth-scroller p:nth-child(odd){ font-family:var(--serif); font-size:1.3rem; }
+    .smooth-scroller p:nth-child(even){ color:var(--ink-soft); }
+
+    /* A: word reveal clip */
+    .word-reveal .wr-line { display: block; overflow: hidden; }
+    .word-reveal .wr-line > span { display: inline-block; will-change: transform, opacity; }
+
+    /* G: tilt */
+    .tilt-card {
+      width: min(320px, 80%);
+      aspect-ratio: 3/4;
+      border-radius: 12px;
+      background: linear-gradient(135deg,#efe9e0,#dcd5ca);
+      border:1px solid var(--line);
+      display:grid; place-items:center;
+      color:var(--ink-soft); font-size:.8rem; letter-spacing:.12em; text-transform:uppercase;
+      transform-style: preserve-3d;
+      transition: transform .2s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,.06);
+    }
+  </style>
+</head>
+<body>
+  <div class="cursor" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="site-header is-scrolled">
+    <a class="brand" href="index.html">MA</a>
+    <nav class="nav" aria-label="Primary">
+      <a href="index.html">← Back to site</a>
+      <a href="#top" data-magnetic>Playground</a>
+    </nav>
+  </header>
+
+  <main id="top" class="pg">
+    <div class="pg__intro">
+      <p class="pg__hint">Hidden · Interaction Playground</p>
+      <h1 class="section-title" style="margin-bottom:1.5rem;">Pick your delights</h1>
+      <p>
+        This page is not linked from anywhere on the live site. Each block is a live
+        demo of a micro-interaction. Hover, click, and scroll to feel each one, then
+        tell me which to keep on the real site.
+      </p>
+    </div>
+
+    <!-- B: hover zoom -->
+    <section class="demo" id="zoom">
+      <div class="demo__head">
+        <h2 class="demo__title">B — Project image hover zoom</h2>
+        <span class="demo__tag">Recommended</span>
+      </div>
+      <p class="demo__desc">Project images slowly scale to ~1.06 on hover with the frame clipping the overflow. Very editorial, very safe.</p>
+      <div class="demo__stage">
+        <div class="zoom-frame"><div class="zoom-inner">Hover me</div></div>
+      </div>
+    </section>
+
+    <!-- C: count up -->
+    <section class="demo" id="count">
+      <div class="demo__head">
+        <h2 class="demo__title">C — Impact number count-up</h2>
+        <span class="demo__tag">Recommended</span>
+      </div>
+      <p class="demo__desc">A metric counts up the first time it scrolls into view. Great for showing your numbers (conversion, AOV, retention, etc.).</p>
+      <div class="demo__stage">
+        <div class="count-block">
+          <div class="count-stat">
+            <span class="count-num" data-count="18" data-prefix="+" data-suffix="%">+0%</span>
+          </div>
+          <div class="count-label">booking completion</div>
+        </div>
+        <div class="count-block">
+          <div class="count-stat">
+            <span class="count-num" data-count="4.2" data-decimals="1" data-suffix="×">0×</span>
+          </div>
+          <div class="count-label">faster checkout</div>
+        </div>
+        <button class="replay" data-replay="count">Replay</button>
+      </div>
+    </section>
+
+    <!-- D: cursor label -->
+    <section class="demo" id="cursorlabel">
+      <div class="demo__head">
+        <h2 class="demo__title">D — Cursor morphs to a label</h2>
+        <span class="demo__tag">Bold</span>
+      </div>
+      <p class="demo__desc">The custom cursor grows into a dark disc that says "View" over a target. More expressive, can feel over the top if not used sparingly.</p>
+      <div class="demo__stage">
+        <div class="cursor-label-target" data-cursor-label="View">Hover me</div>
+      </div>
+    </section>
+
+    <!-- E: marquee -->
+    <section class="demo" id="marquee">
+      <div class="demo__head">
+        <h2 class="demo__title">E — Section marquee</h2>
+        <span class="demo__tag">Optional</span>
+      </div>
+      <p class="demo__desc">A slow scrolling band of keywords. Adds motion and rhythm between sections. Kept subtle here.</p>
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee__track">
+          <span>Travel tech <i class="dot">•</i> Commerce <i class="dot">•</i> Marketplaces <i class="dot">•</i> Checkout <i class="dot">•</i> Design systems <i class="dot">•</i></span>
+          <span>Travel tech <i class="dot">•</i> Commerce <i class="dot">•</i> Marketplaces <i class="dot">•</i> Checkout <i class="dot">•</i> Design systems <i class="dot">•</i></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- F: smooth scroll -->
+    <section class="demo" id="smooth">
+      <div class="demo__head">
+        <h2 class="demo__title">F — Inertial smooth scroll</h2>
+        <span class="demo__tag">Heavier</span>
+      </div>
+      <p class="demo__desc">Buttery scroll with momentum (Lenis-style). Nice, but adds a library and affects the whole page feel. Demo below scrolls internally.</p>
+      <div class="demo__stage">
+        <div class="smooth-scroller">
+          <p>Smooth scrolling section one.</p>
+          <p>Drag or scroll inside this box to feel the momentum. It eases in and out rather than snapping.</p>
+          <p>Section three — headings and body.</p>
+          <p>It pairs well with a minimal, editorial layout because the motion carries the eye.</p>
+          <p>Section five.</p>
+          <p>Consider: it changes how the entire page feels, so test it globally, not just here.</p>
+          <p>Section seven.</p>
+          <p>End of the demo scroller.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- G: tilt -->
+    <section class="demo" id="tilt">
+      <div class="demo__head">
+        <h2 class="demo__title">G — Card tilt to cursor</h2>
+        <span class="demo__tag">Gimmicky</span>
+      </div>
+      <p class="demo__desc">The card tilts toward the cursor in 3D. Fun, but often reads as too playful for a senior, minimal look. I'd keep this off.</p>
+      <div class="demo__stage">
+        <div class="tilt-card" data-tilt>Hover me</div>
+      </div>
+    </section>
+
+    <!-- A: word reveal (already in hero) -->
+    <section class="demo" id="wordreveal">
+      <div class="demo__head">
+        <h2 class="demo__title">A — Headline word reveal</h2>
+        <span class="demo__tag">In hero</span>
+      </div>
+      <p class="demo__desc">Words slide up from a clip mask. This is already the hero animation; shown here for reference. Click to replay.</p>
+      <div class="demo__stage">
+        <h3 class="word-reveal" data-word-replay style="font-family:var(--serif);font-size:clamp(1.8rem,5vw,3.2rem);margin:0;letter-spacing:-.02em;">
+          <span class="wr-line"><span>Designing calm,</span></span>
+          <span class="wr-line"><span>confident commerce.</span></span>
+        </h3>
+        <button class="replay" data-replay="word">Replay</button>
+      </div>
+    </section>
+
+    <p style="border-top:1px solid var(--line); padding-top:2rem; color:var(--ink-soft);">
+      Tell me which to keep (I default to B + C, plus a restrained E). I'll wire the winners into the real site.
+    </p>
+  </main>
+
+  <div class="pg-cursor-label" id="pgCursorLabel">View</div>
+
+  <script src="script.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    /* C: count up */
+    function runCount(el) {
+      const target = parseFloat(el.dataset.count || "0");
+      const dec = parseInt(el.dataset.decimals || "0", 10);
+      const prefix = el.dataset.prefix || "";
+      const suffix = el.dataset.suffix || "";
+      const dur = 1400;
+      let start = null;
+      const fmt = (v) => prefix + v.toFixed(dec) + suffix;
+      if (reduce) { el.textContent = fmt(target); return; }
+      function step(ts) {
+        if (!start) start = ts;
+        const p = Math.min((ts - start) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = fmt(target * eased);
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    const countEls = document.querySelectorAll("[data-count]");
+    if ("IntersectionObserver" in window) {
+      const cio = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) { runCount(e.target); cio.unobserve(e.target); }
+        });
+      }, { threshold: 0.5 });
+      countEls.forEach((el) => cio.observe(el));
+    } else { countEls.forEach(runCount); }
+
+    /* Replays */
+    document.querySelectorAll("[data-replay]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const kind = btn.dataset.replay;
+        if (kind === "count") countEls.forEach(runCount);
+        if (kind === "word") {
+          const heads = document.querySelectorAll(".word-reveal");
+          heads.forEach(playWordReveal);
+        }
+      });
+    });
+
+    /* D: cursor label */
+    const label = document.getElementById("pgCursorLabel");
+    const fine = window.matchMedia("(pointer: fine)").matches;
+    if (label && fine && !reduce) {
+      let tx = -100, ty = -100, cx = -100, cy = -100;
+      window.addEventListener("mousemove", (e) => { tx = e.clientX; ty = e.clientY; });
+      (function loop() {
+        cx += (tx - cx) * 0.3; cy += (ty - cy) * 0.3;
+        label.style.transform = `translate3d(${cx}px, ${cy}px, 0)`;
+        requestAnimationFrame(loop);
+      })();
+      document.querySelectorAll("[data-cursor-label]").forEach((t) => {
+        t.addEventListener("mouseenter", () => {
+          label.textContent = t.dataset.cursorLabel;
+          label.classList.add("show");
+        });
+        t.addEventListener("mouseleave", () => label.classList.remove("show"));
+      });
+    }
+
+    /* G: tilt */
+    document.querySelectorAll("[data-tilt]").forEach((card) => {
+      const max = 10;
+      card.addEventListener("mousemove", (e) => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        card.style.transform = `perspective(700px) rotateX(${py * -max}deg) rotateY(${px * max}deg)`;
+      });
+      card.addEventListener("mouseleave", () => { card.style.transform = ""; });
+    });
+
+    /* A: word reveal */
+    function playWordReveal(head) {
+      const lines = head.querySelectorAll(".wr-line");
+      lines.forEach((line, i) => {
+        const inner = line.firstElementChild;
+        inner.style.transition = "none";
+        inner.style.transform = "translateY(110%)";
+        inner.style.opacity = "0";
+        inner.offsetHeight; // reflow
+        inner.style.transition = `transform .9s var(--ease) ${i * 0.12}s, opacity .9s var(--ease) ${i * 0.12}s`;
+        inner.style.transform = "translateY(0)";
+        inner.style.opacity = "1";
+      });
+    }
+    document.querySelectorAll(".word-reveal .wr-line").forEach((line) => {
+      const inner = line.firstElementChild;
+      if (inner) { inner.style.transition = "transform .9s var(--ease), opacity .9s var(--ease)"; }
+    });
+    /* play on load */
+    window.addEventListener("load", () => {
+      document.querySelectorAll(".word-reveal").forEach((h) => {
+        const lines = h.querySelectorAll(".wr-line");
+        lines.forEach((line, i) => {
+          const inner = line.firstElementChild;
+          inner.style.transitionDelay = (i * 0.12) + "s";
+          setTimeout(() => { inner.style.transform = "translateY(0)"; inner.style.opacity = "1"; }, 50);
+        });
+      });
+    });
+    document.querySelectorAll(".word-reveal .wr-line").forEach((line) => {
+      const inner = line.firstElementChild;
+      if (inner) { inner.style.transform = "translateY(110%)"; inner.style.opacity = "0"; }
+    });
+  })();
+  </script>
+</body>
+</html>
