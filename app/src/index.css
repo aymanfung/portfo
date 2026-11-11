@@ -158,6 +158,20 @@ html[data-wipe]::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
 }
+/* A slower fade for flips made mid-gesture (dragging the key card), so it feels like the room dimming rather than a cut. */
+html[data-slow-fade]::view-transition-old(root),
+html[data-slow-fade]::view-transition-new(root) {
+  animation-duration: 1.3s;
+  animation-timing-function: cubic-bezier(.45, 0, .25, 1);
+}
+/* An element named `live-keep` (set on the key card while it is dragged) is NOT part of that fade: its old picture is dropped
+   and only its live, current picture is shown, so whatever is being dragged keeps tracking the pointer instead of lagging on a snapshot
+   of the old page. */
+::view-transition-group(live-keep) { animation: none; }
+::view-transition-old(live-keep) { display: none; }
+::view-transition-new(live-keep) { animation: none; }
+/* While a theme fade is running the transition's own layers sit over the page and would take every click and drag; let them through, so the key card can be grabbed mid-fade. */
+::view-transition, ::view-transition-group(*), ::view-transition-image-pair(*), ::view-transition-old(*), ::view-transition-new(*) { pointer-events: none; }
 html[data-wipe]::view-transition-old(root) { z-index: 1; }
 html[data-wipe]::view-transition-new(root) { z-index: 2; }
 

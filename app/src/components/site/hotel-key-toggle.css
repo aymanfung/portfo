@@ -4,45 +4,28 @@
    Pure CSS 3D; all classes scoped under .hk.
    data-mode="light" → card in the slot, LED green
    data-mode="dark"  → card out, LED red
-   (Wall and plate colours follow the real theme via `.dark` on <html>, so they change when the room does,
-   a beat after the card moves.)
+   (The plate's colours follow the real theme via `.dark` on <html>, so they change when the room does,
+   a beat after the card moves. There is no wall behind it: the plate sits straight on the page.)
    ═══════════════════════════════════════════════════════════════ */
 
-.hk-fit { position: relative; width: 100%; height: calc(330px * var(--hk-s, 1)); }
+.hk-fit { position: relative; width: 100%; height: calc(290px * var(--hk-s, 1)); }
 
 .hk {
   position: absolute; left: 50%; top: 0;
-  width: 760px; height: 330px; margin-left: -380px;
+  width: 440px; height: 290px; margin-left: -220px;   /* 440px keeps it sized as before; wide enough that the scaled box never overflows a phone */
   perspective: 1500px;
   transform: scale(var(--hk-s, 1));
   transform-origin: 50% 0;
 }
 
 .hk .hk-scene {
-  position: absolute; left: 50%; top: 53%;
+  position: absolute; left: 50%; top: 148px;   /* the plate is 200px tall and the pulled-out card reaches ~130px above centre */
   width: 0; height: 0;
   transform-style: preserve-3d;
   transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transition: transform .25s ease-out;
 }
 .hk .hk-scene, .hk .hk-scene * { transform-style: preserve-3d; }
-
-/* ---------- the wall ---------- */
-.hk .hk-wall {
-  position: absolute; left: -210px; top: -145px; width: 420px; height: 290px;
-  border-radius: 18px;
-  transform: translateZ(-6px);
-  background:
-    repeating-linear-gradient(90deg, rgba(60, 40, 20, .035) 0 2px, transparent 2px 16px),
-    linear-gradient(180deg, #ece7df, #e1dbd0);
-  box-shadow: 0 24px 40px -18px rgba(30, 20, 10, .35), inset 0 0 0 1px rgba(255, 255, 255, .6);
-}
-.dark .hk .hk-wall {
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, .025) 0 2px, transparent 2px 16px),
-    linear-gradient(180deg, #232327, #19191c);
-  box-shadow: 0 24px 40px -18px rgba(0, 0, 0, .8), inset 0 0 0 1px rgba(255, 255, 255, .05);
-}
 
 /* ---------- the switch (plate + card) is the button ---------- */
 .hk .hk-switch {
@@ -61,13 +44,11 @@
 .hk .hk-plate-front {
   transform: translateZ(8px);
   background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, .16) 0 1px, rgba(0, 0, 0, .025) 1px 3px),
     linear-gradient(145deg, #f6f7f9 0%, #d3d6dc 55%, #e8eaee 100%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8), inset 0 -2px 4px rgba(0, 0, 0, .12), 0 6px 14px rgba(30, 20, 10, .25);
 }
 .dark .hk .hk-plate-front {
   background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, .05) 0 1px, rgba(0, 0, 0, .06) 1px 3px),
     linear-gradient(145deg, #3d3f45 0%, #26272b 55%, #323438 100%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1), inset 0 -2px 4px rgba(0, 0, 0, .4), 0 6px 14px rgba(0, 0, 0, .6);
 }
@@ -83,8 +64,8 @@
 /* power LED under the slot */
 .hk .hk-led {
   position: absolute; left: 70px; top: 114px; width: 10px; height: 10px; border-radius: 50%;
-  background: #b3261e;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, .25), 0 0 6px 1px rgba(179, 38, 30, .55);
+  background: #4a4c52;                /* unlit: a dead, greyed-out lamp, no glow */
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, .25), inset 0 1px 2px rgba(0, 0, 0, .45);
   transition: background .35s ease .15s, box-shadow .35s ease .15s;
 }
 .hk[data-mode="light"] .hk-led {
@@ -104,32 +85,47 @@
   position: absolute; left: -30px; top: -150px; width: 210px; height: 238px;  /* bottom edge = slot centre (y 88) */
   overflow: hidden; pointer-events: none;
 }
-.hk .hk-clip::after {                 /* soft shadow where the card enters the slot */
+.hk .hk-clip::before {                 /* soft shadow where the card enters the slot */
   content: ""; position: absolute; left: 60px; width: 90px; bottom: 0; height: 9px;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, .35));
 }
+/* Held off to the side the card is not going into the slot, so there is nothing to hide it: it shows whole, over the plate. */
+.hk[data-open] .hk-clip { overflow: visible; }
+/* (the soft shadow above the slot stays put while the card is dragged: it belongs to the slot, not the card) */
 .hk .hk-card {
   --y: 40;                            /* top of the card, in plate px: 40 = slotted in (48px showing) */
+  --x: 0;                             /* sideways, in plate px; only non-zero while it is being dragged */
   --r: 0deg;
+  --fx: 0deg;                         /* the end-over-end flip, only while it is falling */
+  --lz: 0px;                          /* how far the card is pushed toward the viewer, in front of the plate: set by the fall, so a turning card is never cut by the plate */
   position: absolute; left: 72px; top: 0; width: 66px; height: 105px;
-  transform: translateY(calc((var(--y) + 150) * 1px)) rotate(var(--r));
+  /* perspective() + rotateX() is the flip: the card turns about its own horizontal axis, with some depth (so it shows its back) */
+  transform: translate3d(calc(var(--x) * 1px), calc((var(--y) + 150) * 1px), var(--lz)) perspective(520px) rotateX(var(--fx)) rotate(var(--r));
+  transform-style: preserve-3d;
   transition: transform .6s cubic-bezier(.34, 1.3, .5, 1);
   pointer-events: auto;
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;   /* touch-action: so a finger drags the card instead of scrolling the page */
 }
-.hk[data-mode="dark"] .hk-card { --y: -62; --r: -5deg; }
-.hk[data-mode="light"] .hk-switch:hover .hk-card { --y: 34; }
-.hk[data-mode="dark"] .hk-switch:hover .hk-card { --y: -50; --r: -2deg; }
+/* held: it follows the pointer exactly, with no easing */
+.hk[data-drag] .hk-card { transition: none; cursor: grabbing; }
+/* lined up with the slot: it lights, like a reader that has found the card */
+.hk[data-aim] .hk-slot { box-shadow: inset 0 2px 3px #000, 0 1px 0 rgba(255, 255, 255, .75), 0 0 12px 3px rgba(47, 226, 108, .65); }
+.hk .hk-slot { transition: box-shadow .2s ease; }
+/* Pulled out: the same card, straight and on the same centre line as the slot, just higher up. */
+.hk[data-mode="dark"] .hk-card { --y: var(--out, -32); --r: 0deg; }
+/* No hover nudge and no idle bobbing: the card has exactly two resting places (in, out), the same every time, whether it got
+   there by a click, a keypress or a drag. The grab cursor is what says it can be dragged. */
 
 .hk .hk-card-body {
+  backface-visibility: hidden;        /* turned over, you see the back (below), not a mirror image of the front */
   position: absolute; inset: 0; border-radius: 6px;
   background: linear-gradient(160deg, #2b2b30, #121215 60%, #1a1a1e);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16), 0 8px 14px rgba(0, 0, 0, .4);
   display: flex; flex-direction: column; align-items: center; padding-top: 9px; gap: 5px;
   color: #d9c79e;
 }
-.hk[data-mode="dark"] .hk-card-body { animation: hk-bob 2.4s ease-in-out infinite alternate; }
-@keyframes hk-bob { from { transform: translateY(0); } to { transform: translateY(-4px); } }
-.hk .hk-mono { font: italic 600 17px/1 Georgia, "Times New Roman", serif; letter-spacing: .02em; }
+/* the card's name: five letters, so smaller than the old two-letter monogram, in tracked capitals (the trailing space the tracking leaves is cancelled so it stays centred) */
+.hk .hk-mono { font: 600 10px/1 "Geist Variable", ui-sans-serif, system-ui, sans-serif; letter-spacing: .2em; margin-right: -.2em; text-transform: uppercase; }
 .hk .hk-rule { width: 26px; height: 1px; background: linear-gradient(90deg, transparent, #d9c79e, transparent); }
 .hk .hk-chip { width: 20px; height: 15px; border-radius: 3px; margin-top: 8px; background: linear-gradient(135deg, #e7d8b0, #b9a572); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
 .hk .hk-room { margin-top: auto; margin-bottom: 8px; font: 500 6px/1.3 "DM Mono", ui-monospace, monospace; letter-spacing: .18em; text-align: center; color: #b8a77f; }
@@ -137,5 +133,149 @@
 @media (prefers-reduced-motion: reduce) {
   .hk .hk-scene { transition: none; }
   .hk .hk-card { transition: transform .15s linear; }
-  .hk[data-mode="dark"] .hk-card-body { animation: none; }
+}
+
+/* ---------- the other cards (see FACES in HotelKeyToggle.tsx) ---------- */
+/* The bank-style cards are drawn landscape, as the real ones are (92 × 58, the 1.59 : 1 of a real card), then turned a quarter turn
+   and scaled up to stand upright in the key-card slot: the card stays upright, its text runs down it. */
+.hk .hk-card-body[data-face="coral"], .hk .hk-card-body[data-face="gold"],
+.hk .hk-card-body[data-face="licence"], .hk .hk-card-body[data-face="transit"], .hk .hk-card-body[data-face="peri"] {
+  inset: auto; left: 0; top: 0; width: 92px; height: 58px;
+  transform-origin: 0 0; transform: translateX(66px) rotate(90deg) scale(1.1413);
+}
+.hk .hk-card-body[data-face]:not([data-face="hotel"]) { padding: 0; gap: 0; font-family: "Geist Variable", ui-sans-serif, system-ui, sans-serif; }
+.hk .hk-card-body > * { position: absolute; }
+.hk .hk-card-body[data-face="hotel"] > * { position: static; }
+.hk .hk-nfc { width: 8px; height: 8px; }
+.hk .hk-num { font: 500 6px/1 "DM Mono", ui-monospace, monospace; letter-spacing: .12em; }
+.hk .hk-holder { font: 500 5.5px/1 "DM Mono", ui-monospace, monospace; letter-spacing: .12em; }
+.hk .hk-card-body:not([data-face="hotel"]) .hk-chip { margin: 0; width: 15px; height: 11px; border-radius: 2.5px; }
+
+/* coral bank card: flat colour, name top right, chip left, two overlapping rings bottom right */
+.hk [data-face="coral"].hk-card-body { background: #ff4a3d; color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk [data-face="coral"] .hk-bank { right: 7px; top: 6px; font: 700 13px/1 "Geist Variable", sans-serif; letter-spacing: -.03em; }
+.hk [data-face="coral"] .hk-chip { left: 9px; top: 20px; background: linear-gradient(135deg, #f7ede9, #cfc3bd); box-shadow: inset 0 0 0 1px rgba(214, 70, 55, .55); }
+.hk [data-face="coral"] .hk-nfc { left: 28px; top: 22px; opacity: .85; }
+.hk [data-face="coral"] .hk-holder { left: 9px; bottom: 7px; }
+.hk [data-face="coral"] .hk-rings { right: 7px; bottom: 6px; width: 20px; height: 12px; }
+.hk [data-face="coral"] .hk-rings i { position: absolute; top: 0; width: 12px; height: 12px; border-radius: 50%; }
+.hk [data-face="coral"] .hk-rings i:first-child { left: 0; background: #f20000; }
+.hk [data-face="coral"] .hk-rings i:last-child { right: 0; background: #ff9a00; mix-blend-mode: screen; opacity: .95; }
+
+/* gold charge card: engraved-looking gold, a seal in the middle, chip left, number right, name bottom */
+.hk [data-face="gold"].hk-card-body { background: linear-gradient(155deg, #efd98f, #d3ad55 45%, #b78d38 78%, #dcc272); color: #2e2208; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4), inset 0 0 0 3px rgba(60, 40, 5, .18), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk [data-face="gold"] .hk-gold-title { left: 0; right: 0; top: 6px; text-align: center; font: 800 7px/1 "Geist Variable", sans-serif; letter-spacing: .16em; }
+.hk [data-face="gold"] .hk-gold-seal { left: 29px; top: 14px; width: 20px; height: 26px; border-radius: 50%; border: 1px solid rgba(60, 40, 5, .45); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .15), inset 0 0 0 3px rgba(60, 40, 5, .25); }
+.hk [data-face="gold"] .hk-chip { left: 8px; top: 21px; background: linear-gradient(135deg, #f6efd6, #c8b985); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
+.hk [data-face="gold"] .hk-nfc { right: 26px; top: 26px; }
+.hk [data-face="gold"] .hk-num { right: 8px; top: 27px; font-size: 6.5px; }
+.hk [data-face="gold"] .hk-holder { left: 8px; bottom: 7px; font-size: 6px; }
+.hk [data-face="gold"] .hk-since { right: 8px; top: 37px; font: 600 3.6px/1 "Geist Variable", sans-serif; letter-spacing: .1em; opacity: .75; }
+
+/* UK-style photocard licence (invented: no crest, flag or real numbers) */
+.hk [data-face="licence"].hk-card-body { background: linear-gradient(160deg, #f1d3e6, #d8bce6 52%, #c3d2f2); color: #231a33; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .5), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk [data-face="licence"] .hk-dl-head { left: 6px; top: 5px; white-space: nowrap; font: 700 5.5px/1 "Geist Variable", sans-serif; letter-spacing: .06em; }
+.hk [data-face="licence"] .hk-dl-head b { color: #1d3fb3; font-size: 8px; margin-right: 3px; letter-spacing: 0; }
+.hk [data-face="licence"] .hk-dl-photo { left: 6px; top: 16px; width: 24px; height: 30px; border-radius: 2px; background: #e7ebf5; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); overflow: hidden; }
+.hk [data-face="licence"] .hk-dl-photo i { position: absolute; left: 8px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: #8a8fa6; }
+.hk [data-face="licence"] .hk-dl-photo b { position: absolute; left: 3px; top: 16px; width: 18px; height: 18px; border-radius: 50% 50% 0 0; background: #8a8fa6; }
+.hk [data-face="licence"] .hk-dl-line { left: 35px; white-space: nowrap; font: 500 4.8px/1 "DM Mono", monospace; letter-spacing: .04em; }
+.hk [data-face="licence"] .hk-dl-line em { font-style: normal; opacity: .55; margin-right: 1px; }
+.hk [data-face="licence"] .hk-dl-sign { left: 35px; bottom: 5px; font: italic 400 7px/1 Georgia, serif; opacity: .8; }
+
+/* travel card: a sky-blue field with a navy edge, split by a curved white band */
+.hk [data-face="transit"].hk-card-body { background: #0019a8; color: #fff; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk [data-face="transit"] .hk-tr-band { left: 0; top: 0; bottom: 0; width: 77%; background: #fff; border-radius: 0 50% 50% 0 / 0 55% 55% 0; }
+.hk [data-face="transit"] .hk-tr-band::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 94%; background: #11a9ec; border-radius: 0 50% 50% 0 / 0 55% 55% 0; }
+.hk [data-face="transit"] .hk-tr-title { left: 8px; top: 9px; font: 800 17px/1 "Geist Variable", sans-serif; letter-spacing: -.04em; color: #1f3f94; }
+.hk [data-face="transit"] .hk-tr-ring { right: 8px; bottom: 7px; width: 11px; height: 11px; border: 2px solid #fff; border-radius: 50%; box-sizing: border-box; }
+.hk [data-face="transit"] .hk-tr-ring i { position: absolute; left: 2px; top: 2px; width: 3px; height: 3px; border-radius: 50%; background: #fff; }
+.hk [data-face="transit"] .hk-tr-sub { left: 8px; bottom: 15px; font: 600 6.5px/1 "Geist Variable", sans-serif; }
+.hk [data-face="transit"] .hk-tr-sub2 { left: 8px; bottom: 8px; font: 500 4px/1 "Geist Variable", sans-serif; color: #1f3f94; }
+
+/* peri-peri restaurant card: deep chilli red, cream script title, ghosted chilli and swirl */
+.hk [data-face="peri"].hk-card-body { background: linear-gradient(150deg, #c42b33, #a51c25 60%, #8f1620); color: #f6e9b9; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk .hk-peri-art { left: 0; top: 0; width: 100%; height: 100%; }
+.hk [data-face="peri"] .hk-peri-title { left: 8px; top: 7px; font: italic 800 11px/1 Georgia, "Times New Roman", serif; letter-spacing: -.01em; text-shadow: 0 1px 0 rgba(0, 0, 0, .25); }
+.hk [data-face="peri"] .hk-peri-sub { left: 8px; bottom: 7px; font: 600 4px/1 "Geist Variable", sans-serif; letter-spacing: .18em; opacity: .85; }
+.hk [data-face="peri"] .hk-peri-mark { right: 8px; bottom: 6px; width: 10px; height: 10px; border-radius: 50% 50% 50% 0; background: #f6e9b9; transform: rotate(-45deg); }
+.hk .hk-card[data-face="peri"] .hk-card-back { background: linear-gradient(150deg, #c42b33, #a51c25 60%, #8f1620); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18), 0 8px 14px rgba(0, 0, 0, .4); }
+
+/* trading card: the whole face is one drawing (see CardFace), upright; its back is blue */
+.hk [data-face="critter"].hk-card-body { background: #f0c030; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk .hk-crit { left: 0; top: 0; width: 100%; height: 100%; }
+.hk .hk-card[data-face="critter"] .hk-card-back { background: #27409f; box-shadow: 0 8px 14px rgba(0, 0, 0, .4); }
+
+/* ace of spades: upright, as playing cards are */
+.hk [data-face="ace"].hk-card-body { background: linear-gradient(160deg, #fff, #f1f0ea); color: #111; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk [data-face="ace"] .hk-pc-corner { font: 700 11px/1 Georgia, serif; text-align: center; }
+.hk [data-face="ace"] .hk-pc-tl { left: 6px; top: 6px; }
+.hk [data-face="ace"] .hk-pc-br { right: 6px; bottom: 6px; transform: rotate(180deg); }
+.hk [data-face="ace"] .hk-pc-big { left: 0; right: 0; top: 24px; text-align: center; font: 400 48px/1 Georgia, serif; }
+
+/* ---------- the back of the card (seen while it tumbles) ---------- */
+.hk .hk-card-back {
+  position: absolute; inset: 0; border-radius: 6px;
+  transform: rotateX(180deg); backface-visibility: hidden;
+  /* Only exists while the card is tumbling. Anything that flattens the card's 3D (fading it, for one) stops backface-visibility
+     hiding it, and it would then show through the front of the card. */
+  visibility: hidden;
+  background: linear-gradient(160deg, #26262b, #131316 60%, #1b1b20);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14), 0 8px 14px rgba(0, 0, 0, .4);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.hk .hk-back-text { font: 500 6px/1 "DM Mono", ui-monospace, monospace; letter-spacing: .3em; margin-right: -.3em; color: #b8a77f; opacity: .8; }
+
+/* The back of every card matches its front (the key keeps its own dark back). */
+.hk .hk-card[data-face="coral"] .hk-card-back { background: #ff4a3d; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk .hk-card[data-face="gold"] .hk-card-back { background: linear-gradient(155deg, #efd98f, #d3ad55 45%, #b78d38 78%, #dcc272); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4), inset 0 0 0 3px rgba(60, 40, 5, .18), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk .hk-card[data-face="licence"] .hk-card-back { background: linear-gradient(160deg, #f1d3e6, #d8bce6 52%, #c3d2f2); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .5), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk .hk-card[data-face="transit"] .hk-card-back { background: #fbfbfd; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .1), 0 8px 14px rgba(0, 0, 0, .4); overflow: hidden; }
+.hk .hk-tr-back { position: absolute; left: 0; top: 0; width: 92px; height: 58px; transform-origin: 0 0; transform: translateX(66px) rotate(90deg) scale(1.1413); color: #1f3f94; font-family: "Geist Variable", ui-sans-serif, sans-serif; }
+.hk .hk-tr-back > * { position: absolute; }
+.hk .hk-trb-sym { left: 7px; top: 6px; width: 11px; height: 11px; border-radius: 50%; background: #f7d94c; box-shadow: inset 0 0 0 1.5px #1f3f94; }
+.hk .hk-trb-use { left: 22px; top: 7px; font: 600 4px/1.25 "Geist Variable", sans-serif; }
+.hk .hk-trb-no { left: 7px; top: 20px; font: 500 5px/1 "DM Mono", monospace; letter-spacing: .08em; color: #8a7a52; }
+.hk .hk-trb-fine { left: 7px; right: 7px; top: 28px; font: 400 3.3px/1.45 "Geist Variable", sans-serif; color: #3a4b78; }
+.hk .hk-trb-brand { left: 7px; bottom: 11px; font: 700 6px/1 "Geist Variable", sans-serif; }
+.hk .hk-trb-code { left: 7px; bottom: 5px; font: 500 4.5px/1 "DM Mono", monospace; color: #c9a14a; letter-spacing: .08em; }
+.hk .hk-trb-ring { right: 7px; bottom: 5px; width: 11px; height: 11px; border: 2px solid #1f3f94; border-radius: 50%; box-sizing: border-box; }
+.hk .hk-trb-ring i { position: absolute; left: 2px; top: 2px; width: 3px; height: 3px; border-radius: 50%; background: #1f3f94; }
+.hk .hk-card[data-face="ace"] .hk-card-back { background: #fff; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12), 0 8px 14px rgba(0, 0, 0, .4); }
+/* a thin black magnetic stripe, the length of the card (the card's long side runs top to bottom here, as it is stood upright) */
+.hk .hk-card[data-face="coral"] .hk-card-back::before, .hk .hk-card[data-face="gold"] .hk-card-back::before, .hk .hk-card[data-face="peri"] .hk-card-back::before {
+  content: ""; position: absolute; top: 0; bottom: 0; right: 10px; width: 10px; background: linear-gradient(90deg, #0b0b0c, #1b1b1d 50%, #0b0b0c);
+}
+/* licence back: pink-lilac like the front, a ruled table of categories, a signal-light mark, the number in a pale box */
+.hk .hk-card[data-face="licence"] .hk-card-back { overflow: hidden; }
+.hk .hk-dl-back { position: absolute; left: 0; top: 0; width: 92px; height: 58px; transform-origin: 0 0; transform: translateX(66px) rotate(90deg) scale(1.1413); color: #231a33; font-family: "Geist Variable", ui-sans-serif, sans-serif; }
+.hk .hk-dl-back > * { position: absolute; }
+.hk .hk-dlb-13 { left: 5px; top: 4px; font: 700 4.5px/1 "Geist Variable", sans-serif; }
+.hk .hk-dlb-12 { left: 5px; bottom: 5px; font: 500 3.6px/1 "Geist Variable", sans-serif; }
+.hk .hk-dlb-light { left: 6px; top: 15px; width: 9px; height: 23px; border-radius: 2px; background: #1d2536; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; }
+.hk .hk-dlb-light i { width: 5px; height: 5px; border-radius: 50%; background: #f3f3f6; }
+.hk .hk-dlb-light i:nth-child(2) { background: #f1c445; }
+.hk .hk-dlb-table { left: 22px; top: 4px; width: 66px; }
+.hk .hk-dlb-row { display: grid; grid-template-columns: 8px 18px 18px 1fr; height: 5.6px; align-items: center; border-bottom: .4px solid rgba(35, 26, 51, .55); font: 400 2.9px/1 "DM Mono", monospace; white-space: nowrap; }
+.hk .hk-dlb-head { font-weight: 700; }
+.hk .hk-dlb-head b { font: 700 3.8px/1 "Geist Variable", sans-serif; }
+.hk .hk-dlb-no { right: 5px; bottom: 4px; padding: 2px 4px; background: rgba(255, 255, 255, .6); font: 500 4.6px/1 "DM Mono", monospace; letter-spacing: .1em; }
+.hk .hk-ace-back { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* ---------- thrown away: fall off the screen, then a new card appears ---------- */
+/* While it is being dragged or is falling, the whole switch is lifted above the page (later sections have stacking contexts of their
+   own and would otherwise be drawn over the card as it crosses them). */
+.hk[data-drag], .hk[data-fall], .hk[data-respawn] { z-index: 30; }
+/* the fall is driven frame by frame from script: no easing, nothing to click */
+.hk[data-fall] .hk-card { transition: none; pointer-events: none; }
+.hk[data-fall] .hk-card-back { visibility: visible; }
+.hk[data-fall] .hk-clip { overflow: visible; }
+/* the new card: no gliding in from wherever the old one ended up, it just pops in at its rest place */
+.hk[data-respawn] .hk-card { transition: none; animation: hk-respawn-scale .48s cubic-bezier(.2, .9, .3, 1.25); }
+/* The fade is on the front face, not on the card: fading the card itself would flatten its 3D (see .hk-card-back). */
+.hk[data-respawn] .hk-card-body { animation: hk-respawn-fade .3s ease-out; }
+@keyframes hk-respawn-scale { 0% { scale: .55; } 100% { scale: 1; } }
+@keyframes hk-respawn-fade { 0% { opacity: 0; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .hk[data-respawn] .hk-card, .hk[data-respawn] .hk-card-body { animation: none; }
 }

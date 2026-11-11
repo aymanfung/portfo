@@ -2,10 +2,15 @@ import { useRef } from "react"
 import { useParallax, useStageFit, useThemeSwitch } from "@/hooks/use-theme-switch"
 import "./taxi-toggle.css"
 
-const STAGE_W = 760
-/** Overall size of the model: 1 = the full 760px stage, lower = smaller. */
-const SIZE = 0.7
+/** The table the light sits on is 640px wide in its own design units; everything is scaled from that. */
+const TABLE_W = 640
+/** Side space kept clear of the screen edge, per side, on a phone. */
+const GUTTER = 16
+/** How big it may get: nearly the full width of a phone, a more modest size on a larger screen. */
+const maxScale = (vw: number) => (vw < 600 ? 0.9 : 0.7)
+/** Resting tilt and mouse sway. The Hong Kong taxi is seen from higher up so its folded-down disc shows in the tray. */
 const PARALLAX = { ry: 10, rx0: -6, rx: 5 }
+const PARALLAX_HK = { ry: 10, rx0: -22, rx: 5 }
 
 /** Slab faces: top, front, back, left, right. */
 function Slab({ className }: { className: string }) {
@@ -69,9 +74,56 @@ function LondonSign() {
   )
 }
 
-export type TaxiVariant = "london" | "newyork"
+/** Hong Kong taxi, the first design: the light box with TAXI / 的士 in red. These parts never move (the disc beside them is the control). */
+function HongKongBox() {
+  return (
+    <>
+      <Slab className="hkt-flange" />
+      <div className="hkt-lightbox" aria-hidden="true">
+        <div className="hkt-face hkt-back"><span className="hkt-text">TAXI</span></div>
+        <div className="hkt-face hkt-cap hkt-cap-l"><span className="hkt-zh">的<br />士</span></div>
+        <div className="hkt-face hkt-cap hkt-cap-r"><span className="hkt-zh">的<br />士</span></div>
+        <div className="hkt-face hkt-lid" />
+        <div className="hkt-face hkt-front"><span className="hkt-text">TAXI</span></div>
+      </div>
+      <Slab className="hkt-tray" />
+      <Slab className="hkt-pad" />
+      <Slab className="hkt-hinge" />
+      <Slab className="hkt-post-l" />
+      <Slab className="hkt-post-r" />
+    </>
+  )
+}
+
+/** The 空車 FOR HIRE disc in its holder: upright in light mode, folded flat into the tray in dark mode. */
+function HongKongFlag() {
+  return (
+    <div className="hkt-flag-anchor">
+      <div className="hkt-flag">
+        <div className="hkt-disc">
+          {[-2, -1, 0, 1, 2].map((z) => (
+            <div key={z} className="hkt-disc-rim" style={{ transform: `translateZ(${z}px)` }} />
+          ))}
+          <div className="hkt-disc-back" />
+          <div className="hkt-disc-front">
+            <span className="hkt-disc-zh">空車</span>
+            <span className="hkt-disc-en">FOR HIRE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export type TaxiVariant = "hongkong" | "london" | "newyork"
 
 const COPY: Record<TaxiVariant, { light: string; dark: string; labelLight: string; labelDark: string }> = {
+  hongkong: {
+    light: "For hire · tap the sign to fold it down",
+    dark: "Not for hire · tap the sign to flip it up",
+    labelLight: "For hire sign, upright and the lamp lit. Light mode is on. Press to fold it down for dark mode.",
+    labelDark: "For hire sign, folded down and the lamp off. Dark mode is on. Press to flip it up for light mode.",
+  },
   newyork: {
     light: "On duty · tap the sign to go off duty",
     dark: "Off duty · tap the sign to go back on",
@@ -88,6 +140,7 @@ const COPY: Record<TaxiVariant, { light: string; dark: string; labelLight: strin
 
 /**
  * A taxi light that is also the dark-mode switch. Two designs, picked with `variant`:
+ *  - "hongkong": the red light box with the FOR HIRE disc. The disc is the control: upright = light, folded flat = dark.
  *  - "london" (default): the black-cab oval. Lit orange = light mode; click and it switches off = dark mode.
  *  - "newyork": the rooflight. TAXI lit = light mode; click and it goes OFF DUTY (OFF DUTY lights up) = dark mode.
  * The dark theme is the `.dark` class on <html>. The sign is a real button (keyboard and screen reader).
@@ -95,8 +148,8 @@ const COPY: Record<TaxiVariant, { light: string; dark: string; labelLight: strin
 export function TaxiToggle({ variant = "london" }: { variant?: TaxiVariant }) {
   const { dark, setTheme } = useThemeSwitch()
   const sceneRef = useRef<HTMLDivElement>(null)
-  useStageFit(STAGE_W, SIZE, "--taxi-s")
-  useParallax(sceneRef, PARALLAX)
+  useStageFit(TABLE_W, 1, "--taxi-s", GUTTER * 2, maxScale)
+  useParallax(sceneRef, variant === "hongkong" ? PARALLAX_HK : PARALLAX)
 
   const toggle = () => setTheme(!dark)
 
@@ -107,6 +160,7 @@ export function TaxiToggle({ variant = "london" }: { variant?: TaxiVariant }) {
           <div className="taxi-floor-shadow" />
           <div className="taxi-scene" ref={sceneRef}>
             <Slab className="table" />
+            {variant === "hongkong" ? <HongKongBox /> : null}
 
             <div
               className="taxi-sign"
@@ -122,7 +176,7 @@ export function TaxiToggle({ variant = "london" }: { variant?: TaxiVariant }) {
                 }
               }}
             >
-              {variant === "london" ? <LondonSign /> : <NewYorkSign />}
+              {variant === "london" ? <LondonSign /> : variant === "hongkong" ? <HongKongFlag /> : <NewYorkSign />}
             </div>
           </div>
         </div>

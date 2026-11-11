@@ -98,7 +98,8 @@ export function useScanner({ visible, onBoarded }: Options) {
   /** red light + wording while the phone is on its way up */
   const updateProgress = useCallback(() => {
     const st = s.current
-    const isNear = st.dy < -2
+    // the red light is on the moment the phone is held (dragging), and while it is scrolled up the slot
+    const isNear = st.mode === "dragging" || st.dy < -2
     setNear(isNear)
     if (!isNear) setStatus(IDLE_TEXT)
     else if (st.mode === "dragging" && st.dy <= targetDy() * 0.86) setStatus("Release to\ntake off")
@@ -209,8 +210,9 @@ export function useScanner({ visible, onBoarded }: Options) {
     st.startY = e.clientY
     st.startDy = st.dy
     setTransition("none")
+    updateProgress() // red light on right away, not only once it has moved
     e.preventDefault()
-  }, [engage])
+  }, [engage, updateProgress])
 
   return { fitRef, phoneRef, captionRef, idle: !engaged, near, success, status, onPhonePointerDown }
 }

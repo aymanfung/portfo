@@ -4,7 +4,7 @@ import { Scanner } from "@/components/scanner/Scanner"
 import { SiteDock } from "@/components/site/SiteDock"
 import { FlightPlan } from "@/components/site/FlightPlan"
 import { HotelKeyToggle } from "@/components/site/HotelKeyToggle"
-import { EyeToggle } from "@/components/site/EyeToggle"
+// import { EyeToggle } from "@/components/site/EyeToggle" // removed from the page for now (component kept)
 // import { TaxiToggle } from "@/components/site/TaxiToggle" // kept: taxi-light dark-mode toggles (london / newyork)
 import { Masthead } from "@/components/site/Masthead"
 import { About, Contact } from "@/components/site/Outro"
@@ -30,8 +30,7 @@ export default function App() {
           <Masthead />
           {/* Hidden for now: <AirplaneWindow /> (component and its dark styling are kept) */}
           <HotelKeyToggle />
-          <EyeToggle />
-          {/* Alternatives kept: <TaxiToggle variant="london" /> or <TaxiToggle variant="newyork" /> */}
+          {/* Alternatives kept: <TaxiToggle variant="london" /> or <TaxiToggle variant="newyork" /> or <EyeToggle /> */}
 
           <section className="mx-auto mt-12 max-w-xl px-5 text-center">
             <p className="text-xl font-medium sm:text-2xl">Senior Product Designer</p>

@@ -202,9 +202,9 @@ export function Scanner({ visible, onBoarded }: ScannerProps) {
               they go ghost-faint and light up from the bottom in step with how far up the slot the phone is. Letting go
               early morphs them back; a successful scan fades them out. They stay put: the phone moves, they don't. */}
           <div className={cn("chevrons", !idle && "chevrons--drag", success && "chevrons--gone")} aria-hidden="true">
-            {[3, 2, 1, 0].map((n) => (
-              <svg key={n} className={cn("chev", `chev--${n}`, n > 1 && "chev--extra")} viewBox="0 0 48 20" style={{ "--i": n } as React.CSSProperties}>
-                <path d="M6 15 L24 6 L42 15" />
+            {[2, 1, 0].map((n) => (
+              <svg key={n} className={cn("chev", `chev--${n}`, n > 1 && "chev--extra")} viewBox="0 0 36 9" preserveAspectRatio="none" style={{ "--i": n } as React.CSSProperties}>
+                <path d="M-6 12 L18 0 L42 12" />
               </svg>
             ))}
           </div>

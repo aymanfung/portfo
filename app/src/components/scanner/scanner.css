@@ -37,7 +37,7 @@ html.gate-lock, html.gate-lock body { overflow: hidden; overscroll-behavior: non
 /* The whole 3D scene lives in a fixed 420×700 design box. JS scales that box uniformly (--k) to fit
    any viewport, so angle, perspective, ratio and proportions are identical on desktop, tablet and phone. */
 .scanner-fit { position: relative; z-index: 3; width: calc(420px * var(--k, 1)); height: calc(700px * var(--k, 1)); flex: none; }
-.scanner-wrap { position: absolute; left: 0; top: 0; width: 420px; height: 700px; transform-origin: 0 0; transform: scale(var(--k, 1)); perspective: 2000px; perspective-origin: 50% 236px; }
+.scanner-wrap { position: absolute; left: 0; top: 0; width: 420px; height: 700px; transform-origin: 0 0; transform: scale(var(--k, 1)); perspective: 2000px; perspective-origin: 50% 236px; z-index: 1; } /* z-index 1: above the swipe chevrons (0), which sit behind the scanner and the phone */
 .scene {
   position: absolute; left: 50%; top: 126px; width: 264px; height: 250px; margin-left: -132px; transform-origin: 132px 125px;
   transform-style: preserve-3d;
@@ -84,7 +84,11 @@ html.gate-lock, html.gate-lock body { overflow: hidden; overscroll-behavior: non
 /* Scan light: spreads from under the head across the slot and lights the phone, plus a halo leaking out onto the surface */
 .glow, .halo { position: absolute; pointer-events: none; opacity: 0; transition: opacity .25s var(--ease); }
 .glow {
-  left: -48px; top: 30px; width: 360px; height: 330px; transform: translateZ(67px);
+  /* Depth: this must stay ABOVE the phone at every height. The phone's face rests at z 66 and floats up to ~94 while idle, so a
+     glow at 67 sat behind the floating phone and then flipped in front of it the moment it was pressed down (the sudden pop
+     onto the phone). At 100 it is over the phone always. The scene is tilted back 35deg, so raising it 33 units would lift it
+     ~19px on screen; the extra top offset (33 * tan 35deg = 23px) puts it back where it was. */
+  left: -48px; top: 53px; width: 360px; height: 330px; transform: translateZ(100px);
   background:
     radial-gradient(ellipse 56% 44% at 50% 56%, rgba(255,70,55,.78) 0%, rgba(255,59,48,.4) 40%, transparent 74%);
   border-radius: 40px;
@@ -209,7 +213,13 @@ html.gate-lock, html.gate-lock body { overflow: hidden; overscroll-behavior: non
 
 .chevrons {
   --drag: 0;
+  z-index: 0;                         /* behind the scanner and the phone (.scanner-wrap is 1), which are drawn over it where they overlap */
   position: absolute; inset: 0; pointer-events: none;
+  /* Held, the whole stack tips back like a sign lying on the ground, hinged at the baseline under the lowest band (--drag eases
+     it, so it tilts as it grows). Same-size bands, but the far ones, up the stack, are further away: smaller, and squashed
+     closer together, by true perspective. Idle (--drag 0) it is flat. */
+  transform-origin: 50% calc(100% + 4px);
+  transform: perspective(210px) rotateX(calc(var(--drag) * 30deg));   /* a close eye point and a gentle tilt: the far bands converge without the stack going flat */
   /* muted while idle, the page's ink once you are dragging */
   color: color-mix(in srgb, var(--foreground) clamp(0%, calc(var(--drag) * 100%), 100%), var(--muted-foreground));
   transition: --drag .6s cubic-bezier(0.34, 1.45, 0.5, 1), opacity .25s var(--ease), visibility .25s;
@@ -221,27 +231,39 @@ html.gate-lock, html.gate-lock body { overflow: hidden; overscroll-behavior: non
   /* ANCHORED AT THE BOTTOM. Each chevron is placed by its bottom edge, a distance up from one fixed baseline: --s0 idle,
      --s1 dragging. The lowest chevron has 0 in both, so its bottom edge never moves while it grows, and the others unfold
      upward from it: the two extras start stacked on the second one and fan out above.
-     The spacing is real pixels, NOT scaled by --k (the scanner's fit-to-screen factor): the chevrons themselves are a
-     fixed size, so their gaps have to be too, or they would crowd on a small screen and spread out on a big one. Only the
-     baseline (the bottom of the scaled scanner box this sits in) moves with the screen. */
+     The spacing is real pixels, NOT scaled by --k (the scanner's fit-to-screen factor), and so is the line weight: the gaps
+     and the stroke must not change with the screen, or they would crowd on a small one and spread out on a big one. Only the
+     baseline (the bottom of the scaled scanner box this sits in) moves with the screen.
+     The WIDTH is the one thing that does follow the screen, but only while dragging: held, each chevron spreads to about a third
+     of the phone's width (72 design units times --k). Idle it stays a small 26px mark.
+
+     THE LOOK: a "sergeant stripe". Held, each chevron is a heavy solid band with a sharp point and flat, vertical-cut ends,
+     stacked tight with thin gaps. It is the thin idle line drawn with a very thick stroke: square caps and a mitred point (so
+     the corners are sharp), and the svg is clipped to its own left and right edges (the path runs past them) so the ends are
+     cut straight up and down instead of at the slant. The box is cropped tight to the line's centre-line, but a thick band
+     reaches below it, so the bottom offset is raised by the half-thickness the band adds (see `bottom`).
+
+     PERSPECTIVE: every band is the same size; the receding look comes from tilting the whole stack back in 3D (see
+     `.chevrons`), so the top of the stack is simply further away. */
   position: absolute; left: 50%;
-  bottom: calc(var(--s0) + (var(--s1) - var(--s0)) * var(--drag) - 10px);
-  width: calc(26px + 20px * var(--drag)); aspect-ratio: 48 / 20; height: auto;
+  bottom: calc(var(--s0) + (var(--s1) - var(--s0)) * var(--drag) - 7px + 7.9px * var(--drag));   /* + the extra the thick band hangs below the box: 0.559 x the 14px growth in stroke */
+  width: calc(26px + (var(--k, 1) * 72px - 26px) * var(--drag)); aspect-ratio: calc(4 - 1.2 * var(--drag)); height: auto;   /* 4:1 when idle; held it stands taller (about 2.8:1): the path is stretched to the box, see preserveAspectRatio */
   transform: translate(-50%, calc(var(--rise) * (1 - var(--drag))));
-  overflow: visible; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round;
-  stroke-width: calc(3.4 + 3.1 * var(--drag));
+  overflow: visible; fill: none; stroke: currentColor; stroke-linecap: butt; stroke-linejoin: miter;
+  clip-path: inset(-60px 0);                      /* clip left and right to the box (flat vertical ends), but let the point and the band's underside through */
+  stroke-width: calc(1.8 + 14.2 * var(--drag));  /* in screen px (the path is non-scaling): 1.8 thin when idle, 16 heavy when held */
   --idle-op: var(--pulse);
-  /* ghost: barely there until the phone passes this chevron's quarter of the slot, then a soft glow */
-  --drag-op: calc(.09 + .41 * clamp(0, var(--p, 0) * 4 - var(--i, 0), 1));
+  /* ghost: barely there until the phone passes this chevron's third of the slot, then a soft glow (three bands share the slot) */
+  --drag-op: calc(.12 + .5 * clamp(0, var(--p, 0) * 3 - var(--i, 0), 1));
   opacity: clamp(0, calc((1 - var(--drag)) * var(--idle-op) + var(--drag) * var(--drag-op)), 1);
   animation: chevron-rise 1.8s ease-in-out infinite;
   animation-delay: calc((1 - var(--i, 0)) * .25s);
 }
+.chev path { vector-effect: non-scaling-stroke; }
 .chev--extra { --idle-op: 0; }
 .chev--0 { --s0: 0px;  --s1: 0px; }
-.chev--1 { --s0: 13px; --s1: 16px; }
-.chev--2 { --s0: 13px; --s1: 32px; }
-.chev--3 { --s0: 13px; --s1: 48px; }
+.chev--1 { --s0: 13px; --s1: 31px; }   /* held: 31px between bands, before the tilt foreshortens and converges it */
+.chev--2 { --s0: 13px; --s1: 62px; }
 @keyframes chevron-rise {
   0%   { --pulse: 0;  --rise: 8px; }
   40%  { --pulse: .9; }

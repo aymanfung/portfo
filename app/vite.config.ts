@@ -9,4 +9,13 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
+  build: {
+    // two pages: the portfolio (index.html) and the toggle gallery (toggles.html, at /toggles.html)
+    rollupOptions: {
+      input: {
+        main: path.resolve(import.meta.dirname, 'index.html'),
+        toggles: path.resolve(import.meta.dirname, 'toggles.html'),
+      },
+    },
+  },
 })
