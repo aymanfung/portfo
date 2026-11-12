@@ -9,7 +9,7 @@ const ITEMS: DockItem[] = [
   { key: "log", label: "Flight plan", Icon: PlaneIcon },
   { key: "about", label: "About", Icon: UserIcon },
   { key: "contact", label: "Contact", Icon: MailIcon },
-  { key: "gate", label: "Return to gate", Icon: DoorOpenIcon },
+  { key: "gate", label: "Return to gate", Icon: DoorOpenIcon, dividerBefore: true },
 ]
 
 interface SiteDockProps {

@@ -15,6 +15,7 @@ export default defineConfig({
       input: {
         main: path.resolve(import.meta.dirname, 'index.html'),
         toggles: path.resolve(import.meta.dirname, 'toggles.html'),
+        police: path.resolve(import.meta.dirname, 'police.html'),
       },
     },
   },

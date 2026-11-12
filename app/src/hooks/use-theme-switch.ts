@@ -1,3 +1,4 @@
+import { playSound } from "@/lib/sfx"
 import { useCallback, useEffect, useSyncExternalStore, type RefObject } from "react"
 
 /** The dark theme is the `.dark` class on <html> (the shadcn tokens in index.css key off it). */
@@ -48,6 +49,7 @@ export function useThemeSwitch() {
 
   const setTheme = useCallback((next: boolean, origin?: WipeOrigin, opts?: ThemeOptions) => {
     const root = document.documentElement
+    if (root.classList.contains("dark") !== next) playSound("ui-audio/switch6")
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     if (reduce || typeof document.startViewTransition !== "function") {
       applyTheme(next)

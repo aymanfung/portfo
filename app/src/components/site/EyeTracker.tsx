@@ -201,6 +201,12 @@ export function EyeTracker({
      back to wherever the pointer is. Zero does nothing, so the
      first render is quiet. */
   kick = 0,
+  /* ADDED for the police scene: a line for the ball to say, typed
+     into its own bubble and kept there until this changes or goes
+     empty. `onSaid` is called when the last letter has arrived. */
+  say = "",
+  sayTint,
+  onSaid,
 }: {
   follow?: number;
   bounce?: number;
@@ -214,6 +220,9 @@ export function EyeTracker({
   idle?: boolean;
   within?: string;
   kick?: number;
+  say?: string;
+  sayTint?: string;
+  onSaid?: () => void;
 } = {}) {
   const still = stillness();
   const box = useRef<HTMLDivElement>(null);
@@ -224,7 +233,7 @@ export function EyeTracker({
   const lastLine = useRef(-1);
   useEffect(() => () => { turn.current++; }, []);
   const poke = async () => {
-    if (idle) return;
+    if (idle || say) return; // while it has a line to say, a poke does not cut in
     const mine = ++turn.current;
     const pool = LINES.map((_, i) => i).filter((i) => i !== lastLine.current);
     const i = pool[Math.floor(Math.random() * pool.length)];
@@ -243,6 +252,24 @@ export function EyeTracker({
     if (mine !== turn.current) return;
     setTalking(false);
   };
+  const saidCb = useRef(onSaid);
+  saidCb.current = onSaid;
+  useEffect(() => {
+    if (idle) return;
+    if (!say) { setTalking(false); return; }
+    const mine = ++turn.current;
+    if (sayTint) setTint(sayTint);
+    setTyped("");
+    setTalking(true);
+    let k = 0;
+    const id = window.setInterval(() => {
+      if (mine !== turn.current) { window.clearInterval(id); return; }
+      k++;
+      setTyped(say.slice(0, k));
+      if (k >= say.length) { window.clearInterval(id); saidCb.current?.(); }
+    }, KEY_MS * 0.6);
+    return () => window.clearInterval(id);
+  }, [say, sayTint, idle]);
   const eyes = useRef<(SVGGElement | null)[]>([]);
   const knobs = useRef({ follow, bounce, eyeScale });
   knobs.current = { follow, bounce, eyeScale };
@@ -499,7 +526,7 @@ export function EyeTracker({
       <svg
         className="eyt-ball"
         viewBox="0 0 100 100"
-        data-poke={idle ? undefined : true}
+        data-poke={idle || say ? undefined : true}
         onClick={poke}
       >
         <defs>
@@ -525,7 +552,7 @@ export function EyeTracker({
       </svg>
       {idle ? null : (
         <span
-          className="eyt-say"
+          className={`eyt-say${say ? " eyt-say-long" : ""}`}
           data-on={talking || undefined}
           aria-live="polite"
           style={{ "--tint": tint } as CSSProperties}

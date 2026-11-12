@@ -114,6 +114,16 @@
 
 .gdock-item:focus-visible { outline: 1.5px solid var(--ink); outline-offset: 3px; border-radius: 10px; }
 
+/* a thin rule between groups of items: as tall as an icon, centred on the icons (they are 44px boxes with the glyph in the middle) */
+.gdock-divider {
+  flex: none;
+  align-self: flex-end;
+  width: 1px; height: 22px;
+  margin-bottom: 11px;
+  background: rgba(var(--ink-rgb), 0.2);
+  border-radius: 1px;
+  pointer-events: none;}
+
 /* the running dot, the only persistent mark in the dock */
 .gdock-dot {
   position: absolute;

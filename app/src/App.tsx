@@ -3,7 +3,7 @@ import { Scanner } from "@/components/scanner/Scanner"
 // import { AirplaneWindow } from "@/components/site/AirplaneWindow" // hidden for now
 import { SiteDock } from "@/components/site/SiteDock"
 import { FlightPlan } from "@/components/site/FlightPlan"
-import { HotelKeyToggle } from "@/components/site/HotelKeyToggle"
+import { LostKeyCards } from "@/components/site/LostKeyCards"
 // import { EyeToggle } from "@/components/site/EyeToggle" // removed from the page for now (component kept)
 // import { TaxiToggle } from "@/components/site/TaxiToggle" // kept: taxi-light dark-mode toggles (london / newyork)
 import { Masthead } from "@/components/site/Masthead"
@@ -29,7 +29,7 @@ export default function App() {
         <main>
           <Masthead />
           {/* Hidden for now: <AirplaneWindow /> (component and its dark styling are kept) */}
-          <HotelKeyToggle />
+          <LostKeyCards bottomOffset={92} />
           {/* Alternatives kept: <TaxiToggle variant="london" /> or <TaxiToggle variant="newyork" /> or <EyeToggle /> */}
 
           <section className="mx-auto mt-12 max-w-xl px-5 text-center">
@@ -47,7 +47,10 @@ export default function App() {
       </div>
 
       {/* outside the animated wrapper: a transformed ancestor would stop `fixed` from pinning to the viewport */}
-      <div className={cn("transition-opacity duration-700", boarded ? "opacity-100" : "pointer-events-none opacity-0")} inert={!boarded}>
+      {/* The dock fades in by its OWN opacity (see [data-dock-fade] in index.css), not by this wrapper's: a frosted-glass element only blurs
+          what is behind it up to the nearest ancestor that is part-transparent, so a fading wrapper made the blur pop in only once the
+          fade had finished. */}
+      <div data-dock-fade data-shown={boarded} className={boarded ? "" : "pointer-events-none"} inert={!boarded}>
         <SiteDock onReturnToGate={goToGate} />
       </div>
     </>

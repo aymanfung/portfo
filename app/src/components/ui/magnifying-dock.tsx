@@ -1,8 +1,9 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useLayoutEffect, useRef, useState } from "react";
 import { Bookmark, Folder, House, Search, User } from "lucide-react";
 import "./magnifying-dock.css";
 
-export type DockItem = { key: string; label: string; Icon: typeof House };
+/** `dividerBefore` draws a thin vertical rule to the item's left, to set it apart from the ones before it. */
+export type DockItem = { key: string; label: string; Icon: typeof House; dividerBefore?: boolean };
 type Item = DockItem;
 
 /* the dock's set; the icon bar (GlassIconBar.tsx) carries the same
@@ -173,7 +174,7 @@ export function MagnifyingDock({
       onPointerCancelCapture={() => { down.current = false; to(null); }}
       onPointerLeave={() => { if (!down.current) to(null); }}
     >
-      {items.map(({ key, label, Icon }, i) => {
+      {items.map(({ key, label, Icon, dividerBefore }, i) => {
         const d = hover === null ? 99 : Math.abs(i - hover);
         /* A raised cosine over the reach, rather than the three
            hand-picked steps this used to carry. Those could not
@@ -186,8 +187,9 @@ export function MagnifyingDock({
           d > spread ? 0 : (1 + Math.cos((Math.PI * d) / (spread + 1))) / 2;
         const scale = 1 + (magnify - 1) * f;
         return (
+          <Fragment key={key}>
+            {dividerBefore && <span className="gdock-divider" aria-hidden="true" />}
           <button
-            key={key}
             className="gdock-item"
             aria-label={label}
             aria-current={active === key ? "page" : undefined}
@@ -216,6 +218,7 @@ export function MagnifyingDock({
             </span>
             <span className="gdock-dot" data-on={active === key} />
           </button>
+          </Fragment>
         );
       })}
       {labels && <DockTip bar={bar} at={hover} items={items} />}

@@ -1,0 +1,120 @@
+/* ══ The cards that can sit in the slot ═══════════════════════
+   The looks of each card, front and back. The list of cards and what is printed on them is in ./faces.tsx; the shared card
+   (its size, position, flip) is in ../hotel-key-toggle.css. Every rule here hangs off a card's data-face.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ---------- the other cards (see FACES in ./faces.tsx) ---------- */
+/* The bank-style cards are drawn landscape, as the real ones are (92 × 58, the 1.59 : 1 of a real card), then turned a quarter turn
+   and scaled up to stand upright in the key-card slot: the card stays upright, its text runs down it. */
+.hk .hk-card-body[data-face="coral"], .hk .hk-card-body[data-face="gold"],
+.hk .hk-card-body[data-face="licence"], .hk .hk-card-body[data-face="transit"], .hk .hk-card-body[data-face="peri"] {
+  inset: auto; left: 0; top: 0; width: 92px; height: 58px;
+  transform-origin: 0 0; transform: translateX(66px) rotate(90deg) scale(1.1413);
+}
+.hk .hk-card-body[data-face]:not([data-face="hotel"]) { padding: 0; gap: 0; font-family: "Geist Variable", ui-sans-serif, system-ui, sans-serif; }
+.hk .hk-card-body > * { position: absolute; }
+.hk .hk-card-body[data-face="hotel"] > * { position: static; }
+.hk .hk-nfc { width: 8px; height: 8px; }
+.hk .hk-num { font: 500 6px/1 "DM Mono", ui-monospace, monospace; letter-spacing: .12em; }
+.hk .hk-holder { font: 500 5.5px/1 "DM Mono", ui-monospace, monospace; letter-spacing: .12em; }
+.hk .hk-card-body:not([data-face="hotel"]) .hk-chip { margin: 0; width: 15px; height: 11px; border-radius: 2.5px; }
+
+/* coral bank card: flat colour, name top right, chip left, two overlapping rings bottom right */
+.hk [data-face="coral"].hk-card-body { background: #ff4a3d; color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk [data-face="coral"] .hk-bank { right: 7px; top: 6px; font: 700 13px/1 "Geist Variable", sans-serif; letter-spacing: -.03em; }
+.hk [data-face="coral"] .hk-chip { left: 9px; top: 20px; background: linear-gradient(135deg, #f7ede9, #cfc3bd); box-shadow: inset 0 0 0 1px rgba(214, 70, 55, .55); }
+.hk [data-face="coral"] .hk-nfc { left: 28px; top: 22px; opacity: .85; }
+.hk [data-face="coral"] .hk-holder { left: 9px; bottom: 7px; }
+.hk [data-face="coral"] .hk-rings { right: 7px; bottom: 6px; width: 20px; height: 12px; }
+.hk [data-face="coral"] .hk-rings i { position: absolute; top: 0; width: 12px; height: 12px; border-radius: 50%; }
+.hk [data-face="coral"] .hk-rings i:first-child { left: 0; background: #f20000; }
+.hk [data-face="coral"] .hk-rings i:last-child { right: 0; background: #ff9a00; mix-blend-mode: screen; opacity: .95; }
+
+/* gold charge card: engraved-looking gold, a seal in the middle, chip left, number right, name bottom */
+.hk [data-face="gold"].hk-card-body { background: linear-gradient(155deg, #efd98f, #d3ad55 45%, #b78d38 78%, #dcc272); color: #2e2208; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4), inset 0 0 0 3px rgba(60, 40, 5, .18), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk [data-face="gold"] .hk-gold-title { left: 0; right: 0; top: 6px; text-align: center; font: 800 7px/1 "Geist Variable", sans-serif; letter-spacing: .16em; }
+.hk [data-face="gold"] .hk-gold-seal { left: 29px; top: 14px; width: 20px; height: 26px; border-radius: 50%; border: 1px solid rgba(60, 40, 5, .45); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .15), inset 0 0 0 3px rgba(60, 40, 5, .25); }
+.hk [data-face="gold"] .hk-chip { left: 8px; top: 21px; background: linear-gradient(135deg, #f6efd6, #c8b985); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); }
+.hk [data-face="gold"] .hk-nfc { right: 26px; top: 26px; }
+.hk [data-face="gold"] .hk-num { right: 8px; top: 27px; font-size: 6.5px; }
+.hk [data-face="gold"] .hk-holder { left: 8px; bottom: 7px; font-size: 6px; }
+.hk [data-face="gold"] .hk-since { right: 8px; top: 37px; font: 600 3.6px/1 "Geist Variable", sans-serif; letter-spacing: .1em; opacity: .75; }
+
+/* UK-style photocard licence (invented: no crest, flag or real numbers) */
+.hk [data-face="licence"].hk-card-body { background: linear-gradient(160deg, #f1d3e6, #d8bce6 52%, #c3d2f2); color: #231a33; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .5), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk [data-face="licence"] .hk-dl-head { left: 6px; top: 5px; white-space: nowrap; font: 700 5.5px/1 "Geist Variable", sans-serif; letter-spacing: .06em; }
+.hk [data-face="licence"] .hk-dl-head b { color: #1d3fb3; font-size: 8px; margin-right: 3px; letter-spacing: 0; }
+.hk [data-face="licence"] .hk-dl-photo { left: 6px; top: 16px; width: 24px; height: 30px; border-radius: 2px; background: #e7ebf5; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); overflow: hidden; }
+.hk [data-face="licence"] .hk-dl-photo i { position: absolute; left: 8px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: #8a8fa6; }
+.hk [data-face="licence"] .hk-dl-photo b { position: absolute; left: 3px; top: 16px; width: 18px; height: 18px; border-radius: 50% 50% 0 0; background: #8a8fa6; }
+.hk [data-face="licence"] .hk-dl-line { left: 35px; white-space: nowrap; font: 500 4.8px/1 "DM Mono", monospace; letter-spacing: .04em; }
+.hk [data-face="licence"] .hk-dl-line em { font-style: normal; opacity: .55; margin-right: 1px; }
+.hk [data-face="licence"] .hk-dl-sign { left: 35px; bottom: 5px; font: italic 400 7px/1 Georgia, serif; opacity: .8; }
+
+/* travel card: a sky-blue field with a navy edge, split by a curved white band */
+.hk [data-face="transit"].hk-card-body { background: #0019a8; color: #fff; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk [data-face="transit"] .hk-tr-band { left: 0; top: 0; bottom: 0; width: 77%; background: #fff; border-radius: 0 50% 50% 0 / 0 55% 55% 0; }
+.hk [data-face="transit"] .hk-tr-band::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 94%; background: #11a9ec; border-radius: 0 50% 50% 0 / 0 55% 55% 0; }
+.hk [data-face="transit"] .hk-tr-title { left: 8px; top: 9px; font: 800 17px/1 "Geist Variable", sans-serif; letter-spacing: -.04em; color: #1f3f94; }
+.hk [data-face="transit"] .hk-tr-ring { right: 8px; bottom: 7px; width: 11px; height: 11px; border: 2px solid #fff; border-radius: 50%; box-sizing: border-box; }
+.hk [data-face="transit"] .hk-tr-ring i { position: absolute; left: 2px; top: 2px; width: 3px; height: 3px; border-radius: 50%; background: #fff; }
+.hk [data-face="transit"] .hk-tr-sub { left: 8px; bottom: 15px; font: 600 6.5px/1 "Geist Variable", sans-serif; }
+.hk [data-face="transit"] .hk-tr-sub2 { left: 8px; bottom: 8px; font: 500 4px/1 "Geist Variable", sans-serif; color: #1f3f94; }
+
+/* peri-peri restaurant card: deep chilli red, cream script title, ghosted chilli and swirl */
+.hk [data-face="peri"].hk-card-body { background: linear-gradient(150deg, #c42b33, #a51c25 60%, #8f1620); color: #f6e9b9; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk .hk-peri-art { left: 0; top: 0; width: 100%; height: 100%; }
+.hk [data-face="peri"] .hk-peri-title { left: 8px; top: 7px; font: italic 800 11px/1 Georgia, "Times New Roman", serif; letter-spacing: -.01em; text-shadow: 0 1px 0 rgba(0, 0, 0, .25); }
+.hk [data-face="peri"] .hk-peri-sub { left: 8px; bottom: 7px; font: 600 4px/1 "Geist Variable", sans-serif; letter-spacing: .18em; opacity: .85; }
+.hk [data-face="peri"] .hk-peri-mark { right: 8px; bottom: 6px; width: 10px; height: 10px; border-radius: 50% 50% 50% 0; background: #f6e9b9; transform: rotate(-45deg); }
+.hk .hk-card[data-face="peri"] .hk-card-back { background: linear-gradient(150deg, #c42b33, #a51c25 60%, #8f1620); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18), 0 8px 14px rgba(0, 0, 0, .4); }
+
+/* trading card: a picture of a real card (public/cards), at a real card's proportions (63 : 88), so a little shorter than the upright key */
+.hk .hk-card[data-face="critter"] { height: 92px; }
+.hk [data-face="critter"].hk-card-body { background: none; box-shadow: none; overflow: hidden; border-radius: 4px; }
+.hk .hk-crit { left: 0; top: 0; width: 100%; height: 100%; object-fit: fill; border-radius: 4px; pointer-events: none; user-select: none; }
+.hk .hk-card[data-face="critter"] .hk-card-back { background: none; box-shadow: none; overflow: hidden; border-radius: 4px; }
+
+/* ace of spades: upright, as playing cards are */
+.hk [data-face="ace"].hk-card-body { background: linear-gradient(160deg, #fff, #f1f0ea); color: #111; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk [data-face="ace"] .hk-pc-corner { font: 700 11px/1 Georgia, serif; text-align: center; }
+.hk [data-face="ace"] .hk-pc-tl { left: 6px; top: 6px; }
+.hk [data-face="ace"] .hk-pc-br { right: 6px; bottom: 6px; transform: rotate(180deg); }
+.hk [data-face="ace"] .hk-pc-big { left: 0; right: 0; top: 24px; text-align: center; font: 400 48px/1 Georgia, serif; }
+
+/* The back of every card matches its front (the key keeps its own dark back). */
+.hk .hk-card[data-face="coral"] .hk-card-back { background: #ff4a3d; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk .hk-card[data-face="gold"] .hk-card-back { background: linear-gradient(155deg, #efd98f, #d3ad55 45%, #b78d38 78%, #dcc272); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4), inset 0 0 0 3px rgba(60, 40, 5, .18), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk .hk-card[data-face="licence"] .hk-card-back { background: linear-gradient(160deg, #f1d3e6, #d8bce6 52%, #c3d2f2); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .5), 0 8px 14px rgba(0, 0, 0, .4); }
+.hk .hk-card[data-face="transit"] .hk-card-back { background: #fbfbfd; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .1), 0 8px 14px rgba(0, 0, 0, .4); overflow: hidden; }
+.hk .hk-tr-back { position: absolute; left: 0; top: 0; width: 92px; height: 58px; transform-origin: 0 0; transform: translateX(66px) rotate(90deg) scale(1.1413); color: #1f3f94; font-family: "Geist Variable", ui-sans-serif, sans-serif; }
+.hk .hk-tr-back > * { position: absolute; }
+.hk .hk-trb-sym { left: 7px; top: 6px; width: 11px; height: 11px; border-radius: 50%; background: #f7d94c; box-shadow: inset 0 0 0 1.5px #1f3f94; }
+.hk .hk-trb-use { left: 22px; top: 7px; font: 600 4px/1.25 "Geist Variable", sans-serif; }
+.hk .hk-trb-no { left: 7px; top: 20px; font: 500 5px/1 "DM Mono", monospace; letter-spacing: .08em; color: #8a7a52; }
+.hk .hk-trb-fine { left: 7px; right: 7px; top: 28px; font: 400 3.3px/1.45 "Geist Variable", sans-serif; color: #3a4b78; }
+.hk .hk-trb-brand { left: 7px; bottom: 11px; font: 700 6px/1 "Geist Variable", sans-serif; }
+.hk .hk-trb-code { left: 7px; bottom: 5px; font: 500 4.5px/1 "DM Mono", monospace; color: #c9a14a; letter-spacing: .08em; }
+.hk .hk-trb-ring { right: 7px; bottom: 5px; width: 11px; height: 11px; border: 2px solid #1f3f94; border-radius: 50%; box-sizing: border-box; }
+.hk .hk-trb-ring i { position: absolute; left: 2px; top: 2px; width: 3px; height: 3px; border-radius: 50%; background: #1f3f94; }
+.hk .hk-card[data-face="ace"] .hk-card-back { background: #fff; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12), 0 8px 14px rgba(0, 0, 0, .4); }
+/* a thin black magnetic stripe, the length of the card (the card's long side runs top to bottom here, as it is stood upright) */
+.hk .hk-card[data-face="coral"] .hk-card-back::before, .hk .hk-card[data-face="gold"] .hk-card-back::before, .hk .hk-card[data-face="peri"] .hk-card-back::before {
+  content: ""; position: absolute; top: 0; bottom: 0; right: 10px; width: 10px; background: linear-gradient(90deg, #0b0b0c, #1b1b1d 50%, #0b0b0c);
+}
+/* licence back: pink-lilac like the front, a ruled table of categories, a signal-light mark, the number in a pale box */
+.hk .hk-card[data-face="licence"] .hk-card-back { overflow: hidden; }
+.hk .hk-dl-back { position: absolute; left: 0; top: 0; width: 92px; height: 58px; transform-origin: 0 0; transform: translateX(66px) rotate(90deg) scale(1.1413); color: #231a33; font-family: "Geist Variable", ui-sans-serif, sans-serif; }
+.hk .hk-dl-back > * { position: absolute; }
+.hk .hk-dlb-13 { left: 5px; top: 4px; font: 700 4.5px/1 "Geist Variable", sans-serif; }
+.hk .hk-dlb-12 { left: 5px; bottom: 5px; font: 500 3.6px/1 "Geist Variable", sans-serif; }
+.hk .hk-dlb-light { left: 6px; top: 15px; width: 9px; height: 23px; border-radius: 2px; background: #1d2536; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; }
+.hk .hk-dlb-light i { width: 5px; height: 5px; border-radius: 50%; background: #f3f3f6; }
+.hk .hk-dlb-light i:nth-child(2) { background: #f1c445; }
+.hk .hk-dlb-table { left: 22px; top: 4px; width: 66px; }
+.hk .hk-dlb-row { display: grid; grid-template-columns: 8px 18px 18px 1fr; height: 5.6px; align-items: center; border-bottom: .4px solid rgba(35, 26, 51, .55); font: 400 2.9px/1 "DM Mono", monospace; white-space: nowrap; }
+.hk .hk-dlb-head { font-weight: 700; }
+.hk .hk-dlb-head b { font: 700 3.8px/1 "Geist Variable", sans-serif; }
+.hk .hk-dlb-no { right: 5px; bottom: 4px; padding: 2px 4px; background: rgba(255, 255, 255, .6); font: 500 4.6px/1 "DM Mono", monospace; letter-spacing: .1em; }
+.hk .hk-ace-back { position: absolute; inset: 0; width: 100%; height: 100%; }
+

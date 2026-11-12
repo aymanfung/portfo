@@ -135,8 +135,15 @@
 }
 
 html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+/* No visible scrollbars (scrolling itself still works); a dragged/thrown card that pokes past the edge must never add a horizontal one */
+html, body { scrollbar-width: none; -ms-overflow-style: none; overflow-x: clip; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 ::selection { background: var(--brand); color: #fff; }
+
+/* the site dock fades in and out on its own opacity (the wrapper must stay fully opaque, or the dock's backdrop blur does not work while it fades) */
+[data-dock-fade] .gdock { opacity: 0; transition: opacity 700ms ease-out; }
+[data-dock-fade][data-shown="true"] .gdock { opacity: 1; }
 
 /* dark mode (set by the taxi sign): the glass dock's ink and shadow are bare RGB triples, so flip them here */
 .dark .gdock { --ink-rgb: 250, 245, 245; --shadow-rgb: 0, 0, 0; --g-spec: 0.14; --g-lift: 0.5; --g-edge-hi: 0.35; --g-edge-lo: 0.06; --g-edge-far: 0.18; }
@@ -269,3 +276,7 @@ html[data-wipe]::view-transition-new(root) { z-index: 2; }
 @keyframes cloud-drift { from { transform: translateX(0); } to { transform: translateX(260%); } }
 .cloud { animation: cloud-drift 40s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .cloud { animation: none; } }
+
+/* a ball that is given a whole line to say (the police scene): the bubble wraps instead of running on in one line */
+.eyt-say-long { white-space: normal; width: max-content; max-width: min(300px, calc(100vw - 100px)); padding: 10px 16px; line-height: 1.4; align-items: flex-start; }
+.eyt-say-long .eyt-caret { margin-top: 3px; flex: none; }
