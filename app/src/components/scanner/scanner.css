@@ -274,3 +274,7 @@ html.gate-lock, html.gate-lock body { overflow: hidden; overscroll-behavior: non
   .chev { --pulse: .6; --rise: 0px; }
   .chevrons { transition: opacity .25s var(--ease), visibility .25s; }
 }
+
+/* while the phone is held: one cursor for the entire page */
+html[data-grabbing], html[data-grabbing] * { cursor: grabbing !important; }
+.phone, .phone * { cursor: grab; }

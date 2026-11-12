@@ -189,13 +189,19 @@ export function useScanner({ visible, onBoarded }: Options) {
     }
 
     window.addEventListener("pointermove", onMove)
+    const clearGrab = () => document.documentElement.removeAttribute("data-grabbing")
     window.addEventListener("pointerup", onUp)
     window.addEventListener("pointercancel", onUp)
+    window.addEventListener("pointerup", clearGrab)
+    window.addEventListener("pointercancel", clearGrab)
     window.addEventListener("wheel", onWheel, { passive: false })
     window.addEventListener("keydown", onKey)
     return () => {
       window.removeEventListener("pointermove", onMove)
       window.removeEventListener("pointerup", onUp)
+      window.removeEventListener("pointerup", clearGrab)
+      window.removeEventListener("pointercancel", clearGrab)
+      clearGrab()
       window.removeEventListener("pointercancel", onUp)
       window.removeEventListener("wheel", onWheel)
       window.removeEventListener("keydown", onKey)
@@ -206,6 +212,7 @@ export function useScanner({ visible, onBoarded }: Options) {
     const st = s.current
     if (st.mode !== "idle") return
     st.mode = "dragging"
+    document.documentElement.setAttribute("data-grabbing", "") // one steady closed-hand cursor, wherever the pointer is while the phone lags behind it
     engage()
     st.startY = e.clientY
     st.startDy = st.dy
